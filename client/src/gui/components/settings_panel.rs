@@ -331,7 +331,7 @@ impl SettingsPanelComponent {
             .width(Length::FillPortion(1));
 
         let help_link =
-            "https://book.veloren.net/players/env-vars.html#veloren_assets_override"
+            "https://book.xindeler.com/players/env-vars.html#veloren_assets_override"
                 .to_owned();
         let assets_override = column![]
             .spacing(5)
@@ -392,7 +392,7 @@ impl SettingsPanelComponent {
             )
             .width(Length::Fill);
 
-        let help_link = "https://book.veloren.net/players/env-vars.html".to_owned();
+        let help_link = "https://book.xindeler.com/players/env-vars.html".to_owned();
         let env_vars = column![]
             .spacing(5)
             .push(

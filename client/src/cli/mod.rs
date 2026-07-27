@@ -31,7 +31,7 @@ pub fn process() -> Result<()> {
     #[cfg(windows)]
     tracing::debug!("Cache Path: {}", fs::get_cache_path().display());
     tracing::debug!("Cmdline args: {:?}", cmd);
-    tracing::info!("Visit https://book.veloren.net/ for an FAQ and Troubleshooting");
+    tracing::info!("Visit https://book.xindeler.com/ for an FAQ and Troubleshooting");
 
     if cmd.force_reset {
         std::fs::remove_dir_all(BASE_PATH.as_path())?;

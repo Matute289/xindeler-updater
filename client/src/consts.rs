@@ -27,15 +27,14 @@ pub const LOG_FILE: &str = "xindeler-updater.log";
 // For querying
 pub const CHANGELOG_URL: &str =
     "https://raw.githubusercontent.com/Matute289/xindeler-new-horizon/{tag}/CHANGELOG.md";
-// NOTE: the URLs below still point at Veloren's own live services (news RSS, community showcase,
-// merged-MR feed, auth server, server list, server-browser inclusion doc) — Xindeler does not yet
-// run equivalents for any of these, so these values are placeholders kept only so the crate still
-// compiles; each needs a real Xindeler URL, or the feature reading it needs to be disabled, before
-// this client is distributed to players.
+// NOTE: the xindeler.com paths/subdomains below (news RSS, community showcase, auth server,
+// server list) are a direct domain swap from Veloren's own equivalents — nothing has confirmed
+// any of these actually exist yet on xindeler.com. Each needs a real, live endpoint (or the
+// feature reading it needs to be disabled) before this client is distributed to players.
 // For user linking
-pub const NEWS_URL: &str = "https://veloren.net/rss.xml";
+pub const NEWS_URL: &str = "https://xindeler.com/rss.xml";
 
-pub const COMMUNITY_SHOWCASE_URL: &str = "https://veloren.net/community-showcase/rss.xml";
+pub const COMMUNITY_SHOWCASE_URL: &str = "https://xindeler.com/community-showcase/rss.xml";
 
 pub const GITLAB_MERGED_MR_URL: &str =
     "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&sort=merged_at_desc&state=merged";
@@ -43,9 +42,9 @@ pub const GITLAB_MERGED_MR_URL: &str =
 pub const XINDELER_UPDATER_RELEASE_URL: &str =
     "https://github.com/Matute289/xindeler-updater/releases";
 
-pub const OFFICIAL_AUTH_SERVER: &str = "https://auth.veloren.net";
+pub const OFFICIAL_AUTH_SERVER: &str = "https://auth.xindeler.com";
 
-pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.veloren.net";
+pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.xindeler.com";
 
 pub const GITLAB_SERVER_BROWSER_URL: &str =
     "https://gitlab.com/veloren/serverbrowser#inclusion-of-new-servers-to-the-list";

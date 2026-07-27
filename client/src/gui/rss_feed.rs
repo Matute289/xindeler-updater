@@ -410,7 +410,7 @@ impl From<&rss::Item> for RssPost {
         let mut post = RssPost {
             title: item.title().unwrap_or("Missing title").into(),
             description: Self::process_description(item.description()),
-            button_url: item.link().unwrap_or("https://veloren.net").into(),
+            button_url: item.link().unwrap_or("https://xindeler.com").into(),
             image_url: None,
             image: None,
         };

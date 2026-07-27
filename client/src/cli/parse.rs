@@ -2,7 +2,7 @@
 //! the GUI/CLI can act upon.
 use clap::{ArgAction::Count, Parser, Subcommand, crate_authors, crate_version};
 
-/// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
+/// Provides automatic updates for the voxel RPG Veloren. ( <https://xindeler.com> )
 #[derive(Parser, Debug, Default, Clone)]
 #[command(name = "XindelerUpdater", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {

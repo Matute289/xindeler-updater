@@ -26,17 +26,17 @@ impl LogoPanelComponent {
                     column![]
                         .push(link_widget(
                             BOOK_ICON,
-                            "https://book.veloren.net/",
+                            "https://book.xindeler.com/",
                             "Game Manual",
                         ))
                         .push(link_widget(
                             CHAT_ICON,
-                            "https://veloren.net/joinus/",
+                            "https://xindeler.com/joinus/",
                             "Community",
                         ))
                         .push(link_widget(
                             USER_ICON,
-                            "https://veloren.net/account/",
+                            "https://xindeler.com/account/",
                             "Create Account",
                         ))
                         .push(link_widget(

@@ -181,9 +181,9 @@ pub static LOG_LEVELS: &[LogLevel] =
 impl Server {
     pub fn url(&self) -> &str {
         match self {
-            Server::Production => "https://download.veloren.net",
-            Server::Staging => "https://download.staging.veloren.net",
-            Server::Test => "https://download.test.veloren.net",
+            Server::Production => "https://download.xindeler.com",
+            Server::Staging => "https://download.staging.xindeler.com",
+            Server::Test => "https://download.test.xindeler.com",
         }
     }
 }
