@@ -35,7 +35,7 @@ pub const UNIVERSAL_FONT: Font = Font::with_name("Go Noto Current");
 pub const UNIVERSAL_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/GoNotoCurrent.ttf");
 
-// Poppins is the font used throughout the rest of the Airshipper client
+// Poppins is the font used throughout the rest of the XindelerUpdater client
 pub const POPPINS_FONT: Font = Font {
     weight: Weight::Normal,
     ..Font::with_name("Poppins")

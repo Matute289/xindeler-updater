@@ -1,7 +1,7 @@
 #[cfg(windows)]
 use crate::gui::style::TOMATO_RED;
 use crate::gui::style::{
-    AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
+    XindelerUpdaterTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
     LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE,
     TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
 };
@@ -13,7 +13,7 @@ use iced::{
 #[derive(Debug, Clone, Copy)]
 pub enum ButtonStyle {
     Download(DownloadButtonStyle),
-    AirshipperDownload,
+    XindelerUpdaterDownload,
     ServerListEntry(ServerListEntryButtonState),
     Browser(BrowserButtonStyle),
     NextPrev,
@@ -60,7 +60,7 @@ impl Default for ButtonStyle {
     }
 }
 
-impl button::StyleSheet for AirshipperTheme {
+impl button::StyleSheet for XindelerUpdaterTheme {
     type Style = ButtonStyle;
 
     fn active(&self, style: &Self::Style) -> Appearance {
@@ -79,7 +79,7 @@ impl button::StyleSheet for AirshipperTheme {
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => active_download_button_style(TOMATO_RED),
             },
-            ButtonStyle::AirshipperDownload => airshipper_download_button_appearance(),
+            ButtonStyle::XindelerUpdaterDownload => xindeler_updater_download_button_appearance(),
             ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected) => {
                 server_list_entry_selected_style_active()
             },
@@ -122,7 +122,7 @@ impl button::StyleSheet for AirshipperTheme {
     }
 }
 
-fn airshipper_download_button_appearance() -> Appearance {
+fn xindeler_updater_download_button_appearance() -> Appearance {
     Appearance {
         background: Some(Background::Color(VERY_DARK_GREY)),
         border: Border::with_radius(25.0),

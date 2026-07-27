@@ -1,4 +1,4 @@
-use crate::gui::style::{AirshipperTheme, NAVY_BLUE, VERY_DARK_GREY};
+use crate::gui::style::{XindelerUpdaterTheme, NAVY_BLUE, VERY_DARK_GREY};
 use iced::{
     Background, Border, Color,
     widget::{
@@ -13,7 +13,7 @@ pub enum PickListStyle {
     Default,
 }
 
-impl pick_list::StyleSheet for AirshipperTheme {
+impl pick_list::StyleSheet for XindelerUpdaterTheme {
     type Style = PickListStyle;
 
     // TODO: menu from old picklist style?

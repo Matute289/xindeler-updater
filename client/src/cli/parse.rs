@@ -4,14 +4,14 @@ use clap::{ArgAction::Count, Parser, Subcommand, crate_authors, crate_version};
 
 /// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
 #[derive(Parser, Debug, Default, Clone)]
-#[command(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
+#[command(name = "XindelerUpdater", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {
     #[command(subcommand)]
     pub action: Option<Action>,
     /// Set the logging verbosity for Veloren (v = DEBUG, vv = TRACE)
     #[arg(short, long, action = Count, global = true)]
     pub verbose: u8,
-    /// Set the logging verbosity for Airshipper (d = DEBUG, dd = TRACE)
+    /// Set the logging verbosity for XindelerUpdater (d = DEBUG, dd = TRACE)
     #[arg(short, long, action = Count, global = true)]
     pub debug: u8,
     /// Force a reset of all user data on startup

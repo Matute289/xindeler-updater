@@ -2,7 +2,7 @@ use crate::Result;
 use reqwest::IntoUrl;
 
 // Name your user agent after your app?
-const USER_AGENT: &str = concat!("Airshipper/", env!("CARGO_PKG_VERSION"));
+const USER_AGENT: &str = concat!("XindelerUpdater/", env!("CARGO_PKG_VERSION"));
 
 lazy_static::lazy_static! {
     // Base for config, profiles, ...

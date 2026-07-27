@@ -1,4 +1,4 @@
-use crate::gui::style::{ALMOST_BLACK, ALMOST_BLACK2, AirshipperTheme};
+use crate::gui::style::{ALMOST_BLACK, ALMOST_BLACK2, XindelerUpdaterTheme};
 use iced::{
     Background, Border, Color,
     widget::{
@@ -13,7 +13,7 @@ pub enum ScrollableStyle {
     Default,
 }
 
-impl scrollable::StyleSheet for AirshipperTheme {
+impl scrollable::StyleSheet for XindelerUpdaterTheme {
     type Style = ScrollableStyle;
 
     fn active(&self, _: &Self::Style) -> Appearance {

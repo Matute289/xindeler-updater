@@ -1,5 +1,5 @@
 use crate::gui::style::{
-    AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
+    XindelerUpdaterTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
     DARK_WHITE, LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
 };
 use iced::{
@@ -22,7 +22,7 @@ pub enum ContainerStyle {
     ExtraBrowser,
 }
 
-impl container::StyleSheet for AirshipperTheme {
+impl container::StyleSheet for XindelerUpdaterTheme {
     type Style = ContainerStyle;
 
     fn appearance(&self, style: &Self::Style) -> Appearance {

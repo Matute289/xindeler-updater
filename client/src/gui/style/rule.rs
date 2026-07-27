@@ -1,4 +1,4 @@
-use crate::gui::style::AirshipperTheme;
+use crate::gui::style::XindelerUpdaterTheme;
 use iced::{
     Color,
     widget::{
@@ -13,7 +13,7 @@ pub enum RuleStyle {
     Default,
 }
 
-impl rule::StyleSheet for AirshipperTheme {
+impl rule::StyleSheet for XindelerUpdaterTheme {
     type Style = RuleStyle;
 
     fn appearance(&self, style: &Self::Style) -> Appearance {

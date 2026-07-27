@@ -1,5 +1,5 @@
 use crate::gui::style::{
-    AirshipperTheme, BRIGHT_ORANGE, DARK_WHITE, LIGHT_GREY, LILAC, TOMATO_RED,
+    XindelerUpdaterTheme, BRIGHT_ORANGE, DARK_WHITE, LIGHT_GREY, LILAC, TOMATO_RED,
 };
 use iced::{
     Color,
@@ -17,7 +17,7 @@ pub enum TextStyle {
     Lilac,
 }
 
-impl text::StyleSheet for AirshipperTheme {
+impl text::StyleSheet for XindelerUpdaterTheme {
     type Style = TextStyle;
 
     fn appearance(&self, style: Self::Style) -> Appearance {

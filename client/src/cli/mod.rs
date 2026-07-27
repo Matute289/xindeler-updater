@@ -54,11 +54,11 @@ pub fn process() -> Result<()> {
         .worker_threads(4)
         .build()?;
 
-    // let the user know incase airshipper can be updated.
+    // let the user know incase xindeler-updater can be updated.
     #[cfg(windows)]
     if let Ok(Some(release)) = crate::windows::query() {
         tracing::info!(
-            "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
+            "New XindelerUpdater release found: {}. Run `xindeler-updater upgrade` to update.",
             release.version
         );
     }
@@ -180,7 +180,7 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
 
 async fn start(profile: &Profile, game_server_address: Option<String>) -> Result<()> {
     if !profile.installed() {
-        tracing::info!("Profile is not installed. Install it via `airshipper update`");
+        tracing::info!("Profile is not installed. Install it via `xindeler-updater update`");
         return Ok(());
     }
 
@@ -306,10 +306,10 @@ async fn config(profile: &mut Profile) -> Result<()> {
 fn upgrade() -> Result<()> {
     match crate::windows::query()? {
         Some(release) => {
-            tracing::info!("Found new Airshipper release: {}", release.version);
+            tracing::info!("Found new XindelerUpdater release: {}", release.version);
             crate::windows::update(&release)?;
         },
-        None => tracing::info!("Airshipper is up-to-date."),
+        None => tracing::info!("XindelerUpdater is up-to-date."),
     }
     Ok(())
 }

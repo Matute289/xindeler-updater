@@ -12,7 +12,7 @@ lazy_static::lazy_static! {
     pub static ref BASE_PATH: PathBuf = base();
 }
 
-/// Returns the base path where all airshipper files like config, profiles belong.
+/// Returns the base path where all xindeler-updater files like config, profiles belong.
 ///
 /// |Platform | Example                                                       |
 /// | ------- | ------------------------------------------------------------- |
@@ -20,11 +20,11 @@ lazy_static::lazy_static! {
 /// | macOS   | /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App |
 /// | Windows | C:\Users\Alice\AppData\Roaming                                |
 fn base() -> PathBuf {
-    let path = std::env::var("AIRSHIPPER_ROOT").map_or_else(
+    let path = std::env::var("XINDELER_UPDATER_ROOT").map_or_else(
         |_| {
             dirs::data_dir()
                 .expect("Couldn't locate where to put launcher data!")
-                .join("airshipper")
+                .join("xindeler-updater")
         },
         PathBuf::from,
     );

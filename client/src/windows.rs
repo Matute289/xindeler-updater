@@ -33,9 +33,9 @@ fn get_asset(release: &Release) -> Option<ReleaseAsset> {
 }
 
 pub fn query() -> Result<Option<Release>> {
-    let releases = self_update::backends::gitlab::ReleaseList::configure()
-        .repo_owner("veloren")
-        .repo_name("airshipper")
+    let releases = self_update::backends::github::ReleaseList::configure()
+        .repo_owner("Matute289")
+        .repo_name("xindeler-updater")
         .build()?
         .fetch()?;
 
@@ -51,10 +51,10 @@ pub fn query() -> Result<Option<Release>> {
 
         // Check if Github release is newer
         if contains_asset && newer {
-            tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
+            tracing::debug!("Found new XindelerUpdater release: {}", &latest_release.version);
             return Ok(Some(latest_release.clone()));
         } else {
-            tracing::debug!("Airshipper is up-to-date.");
+            tracing::debug!("XindelerUpdater is up-to-date.");
         }
     }
     Ok(None)
@@ -110,14 +110,14 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
                 &format!(
                     "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
                     install_file_path.display(),
-                    update_cache_path.join("airshipper-install.log").display()
+                    update_cache_path.join("xindeler-updater-install.log").display()
                 ),
             ),
         };
 
         if result <= 32 {
             tracing::error!(
-                "Failed to update airshipper! {}",
+                "Failed to update xindeler-updater! {}",
                 std::io::Error::last_os_error()
             );
         }

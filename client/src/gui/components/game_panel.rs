@@ -280,7 +280,7 @@ impl GamePanelComponent {
                 next
             },
             // TODO: Move this out of GamePanelComponent? This code handles redirecting
-            // voxygen output to Airshipper's log output
+            // voxygen output to XindelerUpdater's log output
             GamePanelMessage::ProcessUpdate(update) => match update {
                 ProcessUpdate::Line(msg) => {
                     redirect_voxygen_log(&msg);
@@ -318,7 +318,7 @@ impl GamePanelComponent {
 
     pub fn view(&self, active_profile: &Profile) -> Element<'_, DefaultViewMessage> {
         // TODO: Improve this with actual game version / date (requires changes to
-        // Airshipper Server)
+        // XindelerUpdater Server)
         let mut version_string = "Pre-Alpha".to_owned();
         if let Some(version) = &active_profile.version {
             version_string.push_str(format!(" ({})", &version[..7]).as_str())

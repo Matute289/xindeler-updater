@@ -302,7 +302,7 @@ impl ServerBrowserPanelComponent {
                     column_cell(
                         // Iced currently doesn't support truncating text widgets to
                         // prevent multi-line overflow so for now we truncate the server
-                        // name to a length which doesn't wrap when the Airshipper window
+                        // name to a length which doesn't wrap when the XindelerUpdater window
                         // is at its default size
                         &server_entry.server.name
                             [..min(server_entry.server.name.len(), 40)],

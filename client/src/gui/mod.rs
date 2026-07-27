@@ -17,7 +17,7 @@ use crate::{
         POPPINS_MEDIUM_FONT_BYTES,
     },
     cli::CmdLine,
-    gui::{style::AirshipperTheme, widget::*},
+    gui::{style::XindelerUpdaterTheme, widget::*},
     profiles::Profile,
 };
 use iced::{Application, Command, Settings, Size, Subscription};
@@ -30,11 +30,11 @@ use views::{
 
 /// Starts the GUI and won't return unless an error occurs
 pub fn run(cmd: CmdLine) -> Result<()> {
-    Ok(Airshipper::run(settings(cmd))?)
+    Ok(XindelerUpdater::run(settings(cmd))?)
 }
 
 #[derive(Debug, Clone)]
-pub struct Airshipper {
+pub struct XindelerUpdater {
     view: View,
 
     pub default_view: DefaultView,
@@ -42,13 +42,13 @@ pub struct Airshipper {
     update_view: UpdateView,
     pub active_profile: Profile,
 
-    // Airshipper update
+    // XindelerUpdater update
     #[cfg(windows)]
     update: Option<self_update::update::Release>,
 }
 
-impl Airshipper {
-    const APP_ID: &'static str = "net.veloren.airshipper";
+impl XindelerUpdater {
+    const APP_ID: &'static str = "com.xindeler.xindeler-updater";
 
     pub fn new(active_profile: Profile) -> Self {
         Self {
@@ -76,10 +76,10 @@ pub enum Message {
     UpdateViewMessage(UpdateViewMessage),
 }
 
-impl Application for Airshipper {
+impl Application for XindelerUpdater {
     type Executor = iced::executor::Default;
     type Message = Message;
-    type Theme = AirshipperTheme;
+    type Theme = XindelerUpdaterTheme;
     type Flags = CmdLine;
 
     fn new(_flags: CmdLine) -> (Self, Command<Message>) {
@@ -87,13 +87,13 @@ impl Application for Airshipper {
         crate::windows::hide_non_inherited_console();
 
         (
-            Airshipper::new(Profile::load()),
+            XindelerUpdater::new(Profile::load()),
             Command::perform(async {}, |_| Message::Loaded),
         )
     }
 
     fn title(&self) -> String {
-        format!("Airshipper v{}", env!("CARGO_PKG_VERSION"))
+        format!("XindelerUpdater v{}", env!("CARGO_PKG_VERSION"))
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -176,7 +176,7 @@ impl Application for Airshipper {
     }
 
     fn theme(&self) -> Self::Theme {
-        AirshipperTheme {}
+        XindelerUpdaterTheme {}
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -210,7 +210,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
 
     #[cfg(target_os = "linux")]
     {
-        window_settings.platform_specific.application_id = Airshipper::APP_ID.to_string();
+        window_settings.platform_specific.application_id = XindelerUpdater::APP_ID.to_string();
     }
 
     Settings {
@@ -219,7 +219,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         default_font: crate::assets::POPPINS_FONT,
         default_text_size: 20.0.into(),
         antialiasing: true,
-        id: Some(Airshipper::APP_ID.to_string()),
+        id: Some(XindelerUpdater::APP_ID.to_string()),
         fonts: vec![
             #[cfg(feature = "bundled_font")]
             Cow::Borrowed(UNIVERSAL_FONT_BYTES),

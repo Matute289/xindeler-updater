@@ -36,7 +36,7 @@ impl Db {
             })
             .connect(&conection_args)
             .await
-            .expect("cannot connect to database, unable to start airshipper server");
+            .expect("cannot connect to database, unable to start xindeler-updater server");
 
         let x = pool.options();
         tracing::info!(?x, "pool options");

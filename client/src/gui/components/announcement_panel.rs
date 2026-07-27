@@ -1,7 +1,7 @@
 use crate::{
     Result,
     assets::{POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON},
-    consts::{AIRSHIPPER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
+    consts::{XINDELER_UPDATER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
     gui::{
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::default::{DefaultViewMessage, Interaction},
@@ -88,7 +88,7 @@ impl AnnouncementPanelComponent {
                 return row![].into();
             },
             (true, None) => {
-                "Airshipper is outdated, please update to the latest release!".to_string()
+                "XindelerUpdater is outdated, please update to the latest release!".to_string()
             },
             (false, Some(msg)) => {
                 let date: chrono::DateTime<chrono::Local> =
@@ -96,7 +96,7 @@ impl AnnouncementPanelComponent {
                 format!("News from {}: {}", date.format("%Y-%m-%d %H:%M"), msg)
             },
             (true, Some(msg)) => {
-                format!("Airshipper is outdated! News: {}", msg)
+                format!("XindelerUpdater is outdated! News: {}", msg)
             },
         };
 
@@ -117,18 +117,18 @@ impl AnnouncementPanelComponent {
                 container(
                     button(
                         row![
-                            text("Download Airshipper").size(10),
+                            text("Download XindelerUpdater").size(10),
                             image(Handle::from_memory(UP_RIGHT_ARROW_ICON.to_vec(),))
                         ]
                         .spacing(5)
                         .align_items(Alignment::Center),
                     )
                     .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
-                        AIRSHIPPER_RELEASE_URL.to_string(),
+                        XINDELER_UPDATER_RELEASE_URL.to_string(),
                     )))
                     .padding([4, 10, 0, 12])
                     .height(Length::Fixed(20.0))
-                    .style(ButtonStyle::AirshipperDownload),
+                    .style(ButtonStyle::XindelerUpdaterDownload),
                 )
                 .padding([0, 20, 0, 0])
                 .height(Length::Fill)

@@ -1,4 +1,4 @@
-use crate::gui::style::{AirshipperTheme, LIME_GREEN, VERY_DARK_GREY};
+use crate::gui::style::{XindelerUpdaterTheme, LIME_GREEN, VERY_DARK_GREY};
 use iced::{
     Background,
     widget::{progress_bar, progress_bar::Appearance},
@@ -10,7 +10,7 @@ pub enum ProgressBarStyle {
     Default,
 }
 
-impl progress_bar::StyleSheet for AirshipperTheme {
+impl progress_bar::StyleSheet for XindelerUpdaterTheme {
     type Style = ProgressBarStyle;
 
     fn appearance(&self, style: &Self::Style) -> Appearance {

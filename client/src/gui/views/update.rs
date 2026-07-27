@@ -1,4 +1,4 @@
-//! Display an update dialog (windows only) to ask whether to update airshipper
+//! Display an update dialog (windows only) to ask whether to update xindeler-updater
 
 use super::{Action, View};
 use crate::gui::{
@@ -23,7 +23,7 @@ pub struct UpdateView {
 impl Default for UpdateView {
     fn default() -> Self {
         Self {
-            message: "Update for Airshipper available. Do you want to update?"
+            message: "Update for XindelerUpdater available. Do you want to update?"
                 .to_string(),
         }
     }
@@ -104,14 +104,14 @@ impl UpdateView {
             UpdateViewMessage::Action(_) => {},
 
             UpdateViewMessage::UpdatePressed => {
-                tracing::info!("Updating Airshipper...");
-                self.message = "Updating Airshipper...".to_string();
+                tracing::info!("Updating XindelerUpdater...");
+                self.message = "Updating XindelerUpdater...".to_string();
                 let release = release.as_ref().unwrap().clone();
                 return Command::perform(
                     async {
                         tokio::task::block_in_place(move || {
                             if let Err(e) = crate::windows::update(&release) {
-                                tracing::error!("Failed to update Airshipper: {}", e);
+                                tracing::error!("Failed to update XindelerUpdater: {}", e);
                                 return e.to_string();
                             }
                             String::new()

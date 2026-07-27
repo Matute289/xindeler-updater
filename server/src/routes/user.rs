@@ -3,9 +3,9 @@ use axum::response::Html;
 pub async fn index() -> Html<&'static str> {
     Html(
         r#"<html>
-<h1>Veloren Airshipper Download Server</h1>
+<h1>Veloren XindelerUpdater Download Server</h1>
 
-You can find the <a href="https://veloren.net/download">airshipper client here</a><br>
+You can find the <a href="https://xindeler.com/download">xindeler-updater client here</a><br>
 
 Check for supported channels via /channels/&lt;os&gt;/&lt;arch&gt; :<br>
 <ul>

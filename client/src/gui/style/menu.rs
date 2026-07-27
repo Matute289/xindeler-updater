@@ -1,5 +1,5 @@
 use crate::gui::style::{
-    AirshipperTheme, LIGHT_NAVY_BLUE, NAVY_BLUE, pick_list::PickListStyle,
+    XindelerUpdaterTheme, LIGHT_NAVY_BLUE, NAVY_BLUE, pick_list::PickListStyle,
 };
 use iced::{Background, Border, Color, overlay, overlay::menu::Appearance};
 
@@ -15,7 +15,7 @@ impl From<PickListStyle> for MenuStyle {
     }
 }
 
-impl overlay::menu::StyleSheet for AirshipperTheme {
+impl overlay::menu::StyleSheet for XindelerUpdaterTheme {
     type Style = MenuStyle;
 
     fn appearance(&self, _: &Self::Style) -> Appearance {

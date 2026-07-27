@@ -1,5 +1,5 @@
 [package]
-name = "airshipper-server"
+name = "xindeler-updater-server"
 version = "0.17.0"
 edition = "2024"
 publish = false

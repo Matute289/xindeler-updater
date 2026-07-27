@@ -1,67 +1,48 @@
-# Airshipper
+# Xindeler Updater
 
-[![Discord](https://img.shields.io/discord/449602562165833758?logo=discord&logoColor=%23f8f8f8&label=discord&color=%23788dd5)](https://veloren.net/discord)
-[![License](https://img.shields.io/github/license/veloren/airshipper?color=blue)](https://gitlab.com/veloren/airshipper/-/blob/master/LICENSE)
-[![GitLab Release](https://img.shields.io/gitlab/v/release/veloren%2Fairshipper?color=blue)](https://gitlab.com/veloren/airshipper/-/releases)
-[![AUR version](https://img.shields.io/aur/version/airshipper?label=AUR)](https://aur.archlinux.org/packages/airshipper/)
+A cross-platform launcher/updater for Xindeler.
 
-A cross-platform Veloren launcher.
-
-![Airshipper](https://i.imgur.com/1VkndRZ.gif)
+Forked from [Airshipper](https://gitlab.com/veloren/airshipper) (Veloren's own launcher), rebranded
+and repointed at Xindeler's own releases. See `docs/design` (private repo) for the full port plan.
 
 ## Features
 
-- [x] Update/Download and start nightly/weekly.
+- [x] Update/Download and start the game.
 - [x] Fancy UI with batteries included.
 - [x] Updates itself on windows.
 
 ## Download
 
-**NOTE:** Airshipper cannot be considered stable yet.
+**NOTE:** Xindeler Updater cannot be considered stable yet.
 
-For *binary* packages the GitLab releases can be used.
+For *binary* packages, use the [GitHub releases](https://github.com/Matute289/xindeler-updater/releases).
 
-For *source* packages **do not** use the `master` branch. Always package latest release either via tag (`v*.*.*`) or branch (`r*.*`) as master is unstable and contains work in progress features.
+For *source* packages **do not** use the `master` branch — it still carries upstream Airshipper's
+in-progress work. Use `main`/`development` instead.
 
 #### Compile from source
 
 ```bash
-git clone https://gitlab.com/veloren/airshipper.git
-cd airshipper
+git clone git@github.com:Matute289/xindeler-updater.git
+cd xindeler-updater
 cargo run --release
 ```
 
-Make sure to have [rustup](https://rustup.rs/) installed to compile rust code and [git lfs](https://book.veloren.net/contributors/development-tools.html#git-lfs) for assets.
+Make sure to have [rustup](https://rustup.rs/) installed to compile Rust code, and `git lfs` for assets.
 
-### Airshipper-Server
+### Xindeler-Updater-Server
 
-**NOTE:** Airshipper-Server is not required by end-users.
+**NOTE:** the server component is inherited from upstream Airshipper's GitLab-CI-webhook design and
+does not transfer as-is to a GitHub-Actions-based release pipeline — see `docs/design` for the port
+plan before relying on it.
 
 #### Compile from source
 
 ```bash
-git clone https://gitlab.com/veloren/airshipper.git
-cd airshipper
-cargo run --release --bin airshipper-server
+cargo run --release --bin xindeler-updater-server
 ```
 
-On first execution, a template configuration file will be created at `config/config.template.ron` and the server will exit.
+On first execution, a template configuration file will be created at `config/config.template.ron` and
+the server will exit.
 
 Rename this to `config.ron` and edit as appropriate before running again.
-
-```bash
-cargo run --release --bin airshipper-server
-```
-
-#### For NixOS users
-
-You can install Airshipper with:
-
-- Flakes enabled Nix: `nix profile install gitlab:veloren/Airshipper`
-- Flakes disabled Nix: `nix-env -i -f "https://gitlab.com/veloren/Airshipper/tarball/master"`
-
-## Code of conduct
-
-Our code of conduct is available here:
-
-<https://veloren.net/code-of-conduct>

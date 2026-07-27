@@ -11,8 +11,8 @@ pub const HOOK_TYPE: &str = "Pipeline Hook";
 
 const DEFAULT_DATA_PATH: &str = "data";
 pub const LOCAL_STORAGE_PATH: &str = "local";
-const DATABASE_FILE: &str = "airshipper.db";
-/// path: /opt/airshipper/config/config.ron
+const DATABASE_FILE: &str = "xindeler-updater.db";
+/// path: /opt/xindeler-updater/config/config.ron
 pub const CONFIG_PATH: &str = "config/config.ron";
 
 pub const API_VERSION: u32 = 1;

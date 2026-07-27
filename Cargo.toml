@@ -23,9 +23,9 @@ lto = true
 debug = false
 panic = "abort"          # don't need unwinding so we can skip including the landing pads for that
 # line tables so we can have useful backtraces for in-house crates
-[profile.release.package."airshipper"]
+[profile.release.package."xindeler-updater"]
 debug = 1
-[profile.release.package."airshipper-server"]
+[profile.release.package."xindeler-updater-server"]
 debug = 1
 
 [workspace.metadata.nix]

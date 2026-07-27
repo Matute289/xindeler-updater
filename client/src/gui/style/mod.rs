@@ -12,7 +12,7 @@ pub mod text;
 pub mod text_input;
 
 // Colors
-// TODO: Rework into a palette and include in AirshipperTheme rather than a load of consts
+// TODO: Rework into a palette and include in XindelerUpdaterTheme rather than a load of consts
 pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
 pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
 pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
@@ -48,16 +48,16 @@ lazy_static! {
 }
 
 #[derive(Default)]
-pub struct AirshipperTheme {}
+pub struct XindelerUpdaterTheme {}
 
 #[derive(Default)]
-pub enum AirshipperThemeStyle {
+pub enum XindelerUpdaterThemeStyle {
     #[default]
     Default,
 }
 
-impl application::StyleSheet for AirshipperTheme {
-    type Style = AirshipperThemeStyle;
+impl application::StyleSheet for XindelerUpdaterTheme {
+    type Style = XindelerUpdaterThemeStyle;
 
     fn appearance(&self, _: &Self::Style) -> Appearance {
         Appearance {

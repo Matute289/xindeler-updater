@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-/// for clients of airshipper asking us stuff
+/// for clients of xindeler-updater asking us stuff
 #[derive(Error, Debug)]
 pub(crate) enum ServerError {
     #[error("Sqlx error: {0}")]

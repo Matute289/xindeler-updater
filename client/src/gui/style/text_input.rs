@@ -1,5 +1,5 @@
 use crate::gui::style::{
-    AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, LIGHT_GREY, MEDIUM_GREY, NAVY_BLUE,
+    XindelerUpdaterTheme, CORNFLOWER_BLUE, DARK_WHITE, LIGHT_GREY, MEDIUM_GREY, NAVY_BLUE,
 };
 use iced::{
     Background, Border, Color,
@@ -12,7 +12,7 @@ pub enum TextInputStyle {
     Default,
 }
 
-impl text_input::StyleSheet for AirshipperTheme {
+impl text_input::StyleSheet for XindelerUpdaterTheme {
     type Style = TextInputStyle;
 
     fn active(&self, _: &Self::Style) -> Appearance {

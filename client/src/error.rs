@@ -26,7 +26,7 @@ pub enum ClientError {
     GameUpdate(String),
 
     #[cfg(windows)]
-    #[error("FATAL: Failed to update airshipper! Error: {0}")]
+    #[error("FATAL: Failed to update xindeler-updater! Error: {0}")]
     SelfUpdate(String),
     #[cfg(windows)]
     #[error("Failed to parse version: {0}")]
@@ -81,7 +81,7 @@ pub fn panic_hook() {
             .to_string(),
         };
 
-        tracing::error!("Airshipper panicked: \n\n{}: {}", reason, panic_info,);
+        tracing::error!("XindelerUpdater panicked: \n\n{}: {}", reason, panic_info,);
 
         default_hook(panic_info);
     }));

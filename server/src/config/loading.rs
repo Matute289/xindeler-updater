@@ -51,7 +51,7 @@ pub struct GithubReleaseConfig {
     pub github_release: String,
 }
 
-/// Webhooks are executed by airshipper when a update happened
+/// Webhooks are executed by xindeler-updater when a update happened
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Webhook {
     /// Url to trigger
