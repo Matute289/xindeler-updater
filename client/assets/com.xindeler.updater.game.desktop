@@ -4,12 +4,10 @@ Type=Application
 NoDisplay=true
 Exec=xindeler-updater
 Icon=com.xindeler.updater
-# Confirmed against the engine source (voxygen/src/window.rs) as of 2026-09-09: the
-# window's WM_CLASS/app-id is still the literal, unrenamed "net.veloren.veloren"
-# (window.rs sets .with_title("Xindeler") but never renamed with_name(...)). This must
-# stay in lockstep with whatever the engine sets — if that ever gets rebranded, this
-# line needs to change in the same PR or taskbar icon matching breaks.
-# Tracked as NH-17 (docs/design/backlog/new-horizon.md, xindeler-new-horizon repo),
-# Tier 6 housekeeping, deferred. Target value already decided there ([Q2]):
-# "com.xindeler.xindeler" — update this line to match once NH-17 ships.
-StartupWMClass=net.veloren.veloren
+# Must stay in lockstep with the engine's winit with_name(...) call
+# (voxygen/src/window.rs), which sets both X11's WM_CLASS and Wayland's app-id. Updated
+# 2026-09-09 to "com.xindeler.xindeler" per NH-17 (docs/design/backlog/new-horizon.md,
+# xindeler-new-horizon repo), landed in xindeler-new-horizon#279. If the engine's value
+# ever changes again, this line needs to change in the same PR or taskbar icon matching
+# breaks.
+StartupWMClass=com.xindeler.xindeler
