@@ -49,7 +49,7 @@ impl Default for Profile {
         Profile::new(
             DEFAULT_PROFILE_NAME.to_owned(),
             Server::Production,
-            Channel("weekly".to_owned()),
+            Channel("release".to_owned()),
         )
     }
 }
@@ -151,11 +151,9 @@ pub async fn query_wgpu_devices(process_path: &Path) -> Vec<WgpuDevice> {
 )]
 pub enum Server {
     Production,
-    Staging,
-    Test,
 }
 
-pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::Test];
+pub static SERVERS: &[Server] = &[Server::Production];
 
 #[derive(
     Debug,
@@ -181,9 +179,7 @@ pub static LOG_LEVELS: &[LogLevel] =
 impl Server {
     pub fn url(&self) -> &str {
         match self {
-            Server::Production => "https://download.xindeler.com",
-            Server::Staging => "https://download.staging.xindeler.com",
-            Server::Test => "https://download.test.xindeler.com",
+            Server::Production => "https://downloads.xindeler.com",
         }
     }
 }
