@@ -4,4 +4,9 @@ Type=Application
 NoDisplay=true
 Exec=xindeler-updater
 Icon=com.xindeler.updater
+# Confirmed against the engine source (voxygen/src/window.rs) as of 2026-09-09: the
+# window's WM_CLASS/app-id is still the literal, unrenamed "net.veloren.veloren"
+# (window.rs sets .with_title("Xindeler") but never renamed with_name(...)). This must
+# stay in lockstep with whatever the engine sets — if that ever gets rebranded, this
+# line needs to change in the same PR or taskbar icon matching breaks.
 StartupWMClass=net.veloren.veloren
