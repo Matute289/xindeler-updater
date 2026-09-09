@@ -1,6 +1,6 @@
 use crate::{
     assets::{
-        BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, VELOREN_LOGO,
+        BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, XINDELER_LOGO,
     },
     gui::{
         style::button::ButtonStyle,
@@ -20,7 +20,7 @@ pub struct LogoPanelComponent {}
 impl LogoPanelComponent {
     pub fn view(&self) -> Element<'_, DefaultViewMessage> {
         let col = column![]
-            .push(Image::new(Handle::from_memory(VELOREN_LOGO.to_vec())))
+            .push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())))
             .push(
                 container(
                     column![]

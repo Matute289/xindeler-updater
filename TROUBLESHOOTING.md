@@ -4,19 +4,19 @@ This page lists common issues and solutions which might work.
 
 # Logs
 
-You can aquire the logs by either running via the terminal (`airshipper -h` to view logging options) or find `airshipper.log` at: 
-|   OS    |                    Path                    |
-| :-----: | :----------------------------------------: |
-| Windows |           `%appdata%/airshipper`           |
-|  Linux  |        `~/.local/share/airshipper`         |
-|  MacOS  | `~/Library/Application Support/airshipper` |
+You can aquire the logs by either running via the terminal (`xindeler-updater -h` to view logging options) or find `xindeler-updater.log` at: 
+|   OS    |                       Path                       |
+| :-----: | :-----------------------------------------------: |
+| Windows |           `%appdata%/xindeler-updater`           |
+|  Linux  |        `~/.local/share/xindeler-updater`         |
+|  MacOS  | `~/Library/Application Support/xindeler-updater` |
 
 ## Graphical issues
 
-**Note**: In General incase airshipper does not open or display correct you can use the cli (or use compatibility desktop shortcut on windows) by
+**Note**: In General incase xindeler-updater does not open or display correct you can use the cli (or use compatibility desktop shortcut on windows) by
 1. Opening a terminal
    > On Windows press `Windows key + R`. Then type `cmd` and hit `enter`. 
-2. Type `airshipper run` and hit enter
+2. Type `xindeler-updater run` and hit enter
 3. Enjoy the game.
 
 #### Known graphical issues

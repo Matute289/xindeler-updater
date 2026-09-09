@@ -1,7 +1,7 @@
 use iced::{Font, font::Weight};
 
-pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
-pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
+pub const XINDELER_LOGO: &[u8] = include_bytes!("../assets/images/xindeler-logo.png");
+pub const XINDELER_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
 pub const SETTINGS_ICON: &[u8] = include_bytes!("../assets/icons/settings.png");
 pub const CHANGELOG_ICON: &[u8] = include_bytes!("../assets/icons/changelog.png");
 pub const CHAT_ICON: &[u8] = include_bytes!("../assets/icons/chat.png");

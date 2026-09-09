@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Xindeler
+Type=Application
+NoDisplay=true
+Exec=xindeler-updater
+Icon=com.xindeler.updater
+StartupWMClass=net.veloren.veloren

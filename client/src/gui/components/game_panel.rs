@@ -287,7 +287,7 @@ impl GamePanelComponent {
                     (None, None)
                 },
                 ProcessUpdate::Exit(code) => {
-                    debug!("Veloren exited with {}", code);
+                    debug!("Xindeler exited with {}", code);
                     (
                         Some(GamePanelState::Retry),
                         Some(Command::perform(async {}, |_| {
@@ -297,7 +297,7 @@ impl GamePanelComponent {
                 },
                 ProcessUpdate::Error(err) => {
                     tracing::error!(
-                        "Failed to receive an update from Veloren process! {}",
+                        "Failed to receive an update from Xindeler process! {}",
                         err
                     );
                     (Some(GamePanelState::Retry), None)

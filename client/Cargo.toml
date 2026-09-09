@@ -17,7 +17,7 @@ app = true
 
 [package.metadata.nix.desktopFile]
 name = "Xindeler Updater"
-icon = "./client/assets/logo.ico"
+icon = "./assets/icons/logo.ico"
 
 [badges]
 maintenance = { status = "actively-developed" }

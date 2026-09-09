@@ -193,9 +193,9 @@ async fn start(profile: &Profile, game_server_address: Option<String>) -> Result
 
     while let Some(progress) = stream.next().await {
         match progress {
-            io::ProcessUpdate::Line(line) => tracing::info!("[Veloren] {}", line),
+            io::ProcessUpdate::Line(line) => tracing::info!("[Xindeler] {}", line),
             io::ProcessUpdate::Exit(exit) => {
-                tracing::info!("Veloren exited with {}", exit)
+                tracing::info!("Xindeler exited with {}", exit)
             },
             io::ProcessUpdate::Error(e) => return Err(e.into()),
         }

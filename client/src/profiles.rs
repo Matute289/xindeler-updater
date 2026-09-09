@@ -263,7 +263,7 @@ impl Profile {
     }
 
     /// Returns path to voxygen binary.
-    /// e.g. <base>/profiles/default/veloren-voxygen.exe
+    /// e.g. <base>/profiles/default/xindeler-voxygen.exe
     pub fn voxygen_path(&self) -> PathBuf {
         self.directory().join(consts::VOXYGEN_FILE)
     }

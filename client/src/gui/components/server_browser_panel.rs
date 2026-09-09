@@ -279,7 +279,7 @@ impl ServerBrowserPanelComponent {
                             .height(Length::Fixed(16.0))
                             .width(Length::Fixed(16.0)),
                         text(
-                            "This is an official server operated by the Veloren project",
+                            "This is an official server operated by the Xindeler project",
                         )
                         .size(14),
                         Position::Right,

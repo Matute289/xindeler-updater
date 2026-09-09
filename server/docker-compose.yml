@@ -1,8 +1,8 @@
 version: "3.1"
 
 services:
-  airshipper:
-    container_name: Airshipper
+  xindeler-updater:
+    container_name: XindelerUpdater
     restart: always
     image: registry.gitlab.com/veloren/airshipper/server:master
     volumes:

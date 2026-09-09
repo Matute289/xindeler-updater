@@ -3,14 +3,14 @@
 !include LogicLib.nsh
 !include "MUI2.nsh" # ModernUI
 
-!define APP_NAME "Airshipper"
-!define COMP_NAME "Airshipper contributors"
+!define APP_NAME "Xindeler Updater"
+!define COMP_NAME "Xindeler contributors"
 !define VERSION "0.17.0.0" # Updated by update_installer_version.sh during CI
-!define COPYRIGHT "Veloren contributors"
-!define DESCRIPTION "Provides automatic updates for the voxel RPG Veloren."
-!define INSTALLER_NAME "airshipper-installer.exe"
-!define MAIN_APP_EXE "airshipper.exe"
-!define ICON "airshipper.ico"
+!define COPYRIGHT "Xindeler contributors"
+!define DESCRIPTION "Provides automatic updates for Xindeler."
+!define INSTALLER_NAME "xindeler-updater-installer.exe"
+!define MAIN_APP_EXE "xindeler-updater.exe"
+!define ICON "xindeler.ico"
 !define BANNER "banner.bmp"
 
 !define INSTALL_DIR "$PROGRAMFILES64\${APP_NAME}"
@@ -18,7 +18,7 @@
 !define REG_ROOT "HKLM"
 !define REG_APP_PATH "Software\Microsoft\Windows\CurrentVersion\App Paths\${MAIN_APP_EXE}"
 !define UNINSTALL_PATH "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-!define REG_START_MENU "Airshipper"
+!define REG_START_MENU "Xindeler Updater"
 
 var SM_Folder
 
@@ -47,7 +47,7 @@ Click Next to continue."
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "${BANNER}"
 !define MUI_ABORTWARNING
 !define MUI_UNABORTWARNING
-!define MUI_FINISHPAGE_RUN "$INSTDIR\Airshipper.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${MAIN_APP_EXE}"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
@@ -70,7 +70,7 @@ Click Next to continue."
 Function UninstallMSI
     # $R0 should contain the GUID of the application
     StrCmp $R0 "" UninstallMSI_nomsi
-    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION  "A previous version of Airshipper was found. It is recommended that you uninstall it first.$\n$\nDo you wish to do that now?" IDNO UninstallMSI_nomsi IDYES UninstallMSI_yesmsi
+    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION  "A previous version of ${APP_NAME} was found. It is recommended that you uninstall it first.$\n$\nDo you wish to do that now?" IDNO UninstallMSI_nomsi IDYES UninstallMSI_yesmsi
     Abort
     UninstallMSI_yesmsi:
         MessageBox MB_OK $R0
@@ -83,7 +83,7 @@ Section -MainProgram
 	${INSTALL_TYPE}
 
     # Search for an old version installed via the previous WiX installer and remove it found
-    !define upgradecode {1715788C-2FC7-44D7-912D-2B46202C2FD9} ;Airshipper WiX installer UpgradeCode
+    !define upgradecode {1715788C-2FC7-44D7-912D-2B46202C2FD9} ;Xindeler Updater WiX installer UpgradeCode
     System::Call 'MSI::MsiEnumRelatedProducts(t "${upgradecode}",i0,i r0,t.r1)i.r2'
     ${If} $2 = 0
         push $R0
@@ -95,8 +95,8 @@ Section -MainProgram
 	SetOverwrite ifnewer
 	SetOutPath "$INSTDIR"
 
-	# Currently the Airshipper installer only installs airshipper.exe, put here by the previous job
-	File /r "..\..\airshipper.exe"
+	# Currently the installer only installs xindeler-updater.exe, put here by the previous job
+	File /r "..\..\${MAIN_APP_EXE}"
 SectionEnd
 
 Section -Icons_Reg
@@ -127,8 +127,8 @@ Section -Icons_Reg
     WriteRegStr ${REG_ROOT} "${UNINSTALL_PATH}"  "DisplayVersion" "${VERSION}"
     WriteRegStr ${REG_ROOT} "${UNINSTALL_PATH}"  "Publisher" "${COMP_NAME}"
 
-    # Add install directory to the system PATH environment variable to allow the airshipper
-    # command to be run from the command prompt from any directory
+    # Add install directory to the system PATH environment variable to allow the
+    # xindeler-updater command to be run from the command prompt from any directory
     EnVar::SetHKCU
     EnVar::Check "Path" "$INSTDIR"
     Pop $0

@@ -193,7 +193,7 @@ impl Application for XindelerUpdater {
 
 fn settings(cmd: CmdLine) -> Settings<CmdLine> {
     use iced::window::{Settings as Window, icon};
-    let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
+    let icon = image::load_from_memory(crate::assets::XINDELER_ICON).unwrap();
 
     #[cfg_attr(not(target_os = "linux"), expect(unused_mut))]
     let mut window_settings = Window {
