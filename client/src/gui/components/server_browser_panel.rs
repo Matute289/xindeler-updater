@@ -6,7 +6,7 @@ use crate::{
         UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
-    consts::{GITLAB_SERVER_BROWSER_URL, OFFICIAL_SERVER_LIST},
+    consts::{OFFICIAL_SERVER_LIST, SERVER_LISTING_REQUEST_URL},
     gui::{
         components::GamePanelMessage,
         style::{
@@ -163,12 +163,12 @@ impl ServerBrowserPanelComponent {
                             )
                             .on_press(DefaultViewMessage::Interaction(
                                 Interaction::OpenURL(
-                                    GITLAB_SERVER_BROWSER_URL.to_string(),
+                                    SERVER_LISTING_REQUEST_URL.to_string(),
                                 ),
                             ))
                             .padding([4, 10, 0, 10])
                             .height(Length::Fixed(20.0))
-                            .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
+                            .style(ButtonStyle::Browser(BrowserButtonStyle::Extra)),
                         )
                         .height(Length::Fill)
                         .align_y(Vertical::Center)

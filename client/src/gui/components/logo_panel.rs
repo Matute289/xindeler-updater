@@ -1,7 +1,5 @@
 use crate::{
-    assets::{
-        BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, XINDELER_LOGO,
-    },
+    assets::{BOOK_ICON, CHAT_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, XINDELER_LOGO},
     gui::{
         style::button::ButtonStyle,
         views::default::{DefaultViewMessage, Interaction},
@@ -38,12 +36,10 @@ impl LogoPanelComponent {
                             USER_ICON,
                             "https://xindeler.com/account/",
                             "Create Account",
-                        ))
-                        .push(link_widget(
-                            HEART_ICON,
-                            "https://opencollective.com/veloren/",
-                            "Donate",
                         )),
+                    // Donate link removed for now: Xindeler doesn't have its own
+                    // donation page yet, and the old Veloren opencollective link
+                    // shouldn't be sending Xindeler players' money there.
                 )
                 .padding([40, 0, 0, 0]),
             );

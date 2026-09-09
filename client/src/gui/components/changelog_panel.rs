@@ -6,7 +6,7 @@ use crate::{
     },
     channels::Channel,
     consts,
-    consts::GITLAB_MERGED_MR_URL,
+    consts::RECENT_CHANGES_URL,
     gui::{
         style::{
             button::{BrowserButtonStyle, ButtonStyle},
@@ -358,11 +358,11 @@ impl ChangelogPanelComponent {
                                 .align_items(Alignment::Center),
                         )
                         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
-                            GITLAB_MERGED_MR_URL.to_string(),
+                            RECENT_CHANGES_URL.to_string(),
                         )))
                         .padding([4, 10, 0, 10])
                         .height(Length::Fixed(20.0))
-                        .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
+                        .style(ButtonStyle::Browser(BrowserButtonStyle::Extra)),
                     )
                     .padding([0, 10, 0, 0])
                     .height(Length::Fill)

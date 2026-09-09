@@ -36,8 +36,9 @@ pub const NEWS_URL: &str = "https://xindeler.com/rss.xml";
 
 pub const COMMUNITY_SHOWCASE_URL: &str = "https://xindeler.com/community-showcase/rss.xml";
 
-pub const GITLAB_MERGED_MR_URL: &str =
-    "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&sort=merged_at_desc&state=merged";
+// The game's source now lives at Matute289/xindeler-new-horizon on GitHub, not GitLab.
+pub const RECENT_CHANGES_URL: &str =
+    "https://github.com/Matute289/xindeler-new-horizon/pulls?q=is%3Apr+is%3Amerged+sort%3Aupdated-desc";
 
 pub const XINDELER_UPDATER_RELEASE_URL: &str =
     "https://github.com/Matute289/xindeler-updater/releases";
@@ -46,5 +47,8 @@ pub const OFFICIAL_AUTH_SERVER: &str = "https://auth.xindeler.com";
 
 pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.xindeler.com";
 
-pub const GITLAB_SERVER_BROWSER_URL: &str =
-    "https://gitlab.com/veloren/serverbrowser#inclusion-of-new-servers-to-the-list";
+// NOTE: placeholder until there's a real "get your server listed" doc page (xindeler-wiki or
+// xindeler-documentation) to point to — an issue against the game repo is at least a real,
+// working destination today, unlike the old Veloren GitLab wiki link it replaces.
+pub const SERVER_LISTING_REQUEST_URL: &str =
+    "https://github.com/Matute289/xindeler-new-horizon/issues/new";

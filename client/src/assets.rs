@@ -5,7 +5,6 @@ pub const XINDELER_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
 pub const SETTINGS_ICON: &[u8] = include_bytes!("../assets/icons/settings.png");
 pub const CHANGELOG_ICON: &[u8] = include_bytes!("../assets/icons/changelog.png");
 pub const CHAT_ICON: &[u8] = include_bytes!("../assets/icons/chat.png");
-pub const HEART_ICON: &[u8] = include_bytes!("../assets/icons/heart.png");
 pub const BOOK_ICON: &[u8] = include_bytes!("../assets/icons/book.png");
 pub const USER_ICON: &[u8] = include_bytes!("../assets/icons/user.png");
 pub const DOWNLOAD_ICON: &[u8] = include_bytes!("../assets/icons/download.png");
