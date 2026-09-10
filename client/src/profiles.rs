@@ -277,27 +277,31 @@ impl Profile {
     /// Returns the download url for this profile
     pub fn download_url(&self) -> String {
         format!(
-            "{}/latest/{}/{}/{}",
+            "{}/updater/latest/{}/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
-            self.channel
+            // Channel::Display capitalizes the first letter for UI presentation
+            // ("release" -> "Release" in the settings dropdown) - the server only
+            // publishes the raw lowercase channel name as a URL path segment, so this
+            // must bypass Display and use the underlying string directly.
+            self.channel.0
         )
     }
 
     pub(crate) fn version_url(&self) -> String {
         format!(
-            "{}/version/{}/{}/{}",
+            "{}/updater/version/{}/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
-            self.channel
+            self.channel.0
         )
     }
 
     pub(crate) fn channel_url(&self) -> String {
         format!(
-            "{}/channels/{}/{}",
+            "{}/updater/channels/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
@@ -305,7 +309,7 @@ impl Profile {
     }
 
     pub(crate) fn api_version_url(&self) -> String {
-        format!("{}/api/version", self.server.url(),)
+        format!("{}/updater/api/version", self.server.url(),)
     }
 
     pub(crate) fn announcement_url(&self) -> String {
