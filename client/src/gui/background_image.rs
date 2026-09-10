@@ -91,25 +91,37 @@ where
         let mut children = layout.children();
         let background_layout = children.next().expect("background layout");
         let foreground_layout = children.next().expect("foreground layout");
+        let bounds = layout.bounds();
 
-        self.background.as_widget().draw(
-            &tree.children[0],
-            renderer,
-            theme,
-            style,
-            background_layout,
-            cursor,
-            viewport,
-        );
-        self.foreground.as_widget().draw(
-            &tree.children[1],
-            renderer,
-            theme,
-            style,
-            foreground_layout,
-            cursor,
-            viewport,
-        );
+        // iced_wgpu batches primitives by kind (quads, then images, then text) rather
+        // than strictly respecting draw() call order, so without explicit layers the
+        // background image - drawn first, but still an "image" primitive - ends up
+        // painted over every quad/text primitive in the whole frame instead of just
+        // behind `foreground`. Wrapping each half in its own layer forces it to
+        // composite as a single, correctly self-ordered unit before the two are
+        // stacked in draw order.
+        renderer.with_layer(bounds, |renderer| {
+            self.background.as_widget().draw(
+                &tree.children[0],
+                renderer,
+                theme,
+                style,
+                background_layout,
+                cursor,
+                viewport,
+            );
+        });
+        renderer.with_layer(bounds, |renderer| {
+            self.foreground.as_widget().draw(
+                &tree.children[1],
+                renderer,
+                theme,
+                style,
+                foreground_layout,
+                cursor,
+                viewport,
+            );
+        });
     }
 
     fn operate(
