@@ -185,7 +185,6 @@ impl DefaultView {
                     (self.background_index + 1) % BACKGROUND_IMAGES.len();
             },
             DefaultViewMessage::Query => {
-                let channel = active_profile.channel.clone();
                 let api_version_url = active_profile.api_version_url();
                 let announcement_url = active_profile.announcement_url();
                 return Command::batch(vec![
@@ -196,9 +195,9 @@ impl DefaultView {
                     }),
                     Command::perform(
                         ChangelogPanelComponent::load_changelog(),
-                        move |update| {
+                        |update| {
                             DefaultViewMessage::ChangelogPanel(
-                                ChangelogPanelMessage::LoadChangelog(update, channel),
+                                ChangelogPanelMessage::LoadChangelog(update),
                             )
                         },
                     ),

@@ -4,7 +4,6 @@ use crate::{
         CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
         UP_RIGHT_ARROW_ICON,
     },
-    channels::Channel,
     consts,
     consts::RECENT_CHANGES_URL,
     gui::{
@@ -37,7 +36,7 @@ use tracing::debug;
 #[derive(Clone, Debug)]
 pub enum ChangelogPanelMessage {
     ScrollPositionChanged(f32),
-    LoadChangelog(Result<ChangelogPanelComponent>, Channel),
+    LoadChangelog(Result<ChangelogPanelComponent>),
     UpdateChangelog(Result<Option<ChangelogPanelComponent>>),
     SaveChangelog,
 }
@@ -57,12 +56,23 @@ pub fn default_display_count() -> usize {
 }
 
 impl ChangelogPanelComponent {
+    /// Resolves which git ref to pull CHANGELOG.md from: the newest semver tag in the
+    /// game repo, falling back to the default branch if that lookup fails (offline,
+    /// rate-limited, etc.) so the panel still shows *something* rather than nothing.
+    async fn changelog_ref() -> String {
+        net::fetch_latest_game_tag().await.unwrap_or_else(|e| {
+            debug!(?e, "Falling back to default branch for changelog");
+            consts::CHANGELOG_FALLBACK_REF.to_owned()
+        })
+    }
+
     #[allow(clippy::while_let_on_iterator)]
-    async fn fetch(channel: Channel) -> Result<Option<Self>> {
+    async fn fetch() -> Result<Option<Self>> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
 
+        let changelog_ref = Self::changelog_ref().await;
         let changelog =
-            net::query(consts::CHANGELOG_URL.replace("{tag}", &channel.0)).await?;
+            net::query(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?;
         let etag = net::get_etag(&changelog);
 
         let changelog_text = changelog.text().await?;
@@ -77,23 +87,34 @@ impl ChangelogPanelComponent {
                 ..
             }) = event
             {
-                let mut version: String = String::new();
-                let mut date: Option<String> = None;
-
-                // h2 version header text
+                // h2 version header text. Collected as one string rather than handled
+                // event-by-event: a bracketed heading like "[0.21.0] - 2026-08-23"
+                // arrives as separate Text("["), Text("0.21.0"), Text("]"),
+                // Text(" - 2026-08-23") events unless the version has a matching link
+                // reference definition elsewhere in the document (as "[Unreleased]"
+                // does, via Keep a Changelog's compare-link convention), in which case
+                // it arrives pre-resolved as a single Text inside a Link. Handling each
+                // Text event independently made every fragment overwrite `version` in
+                // turn, leaving only the last one ("]") - concatenating first sidesteps
+                // that regardless of which shape the heading came in as.
+                let mut heading_text = String::new();
                 while let Some(event) = parser.next() {
                     match event {
                         Event::End(TagEnd::Heading(HeadingLevel::H2)) => break,
-                        Event::Text(text) => {
-                            if text.contains(" - ") {
-                                date = Some(text[3..].trim().to_string());
-                            } else {
-                                version = text.trim().to_string();
-                            }
-                        },
+                        Event::Text(text) => heading_text.push_str(&text),
                         _ => (),
                     }
                 }
+
+                let heading_text = heading_text.trim();
+                let (version, date) = match heading_text.split_once(" - ") {
+                    Some((version, date)) => {
+                        (version.trim(), Some(date.trim().to_string()))
+                    },
+                    None => (heading_text, None),
+                };
+                let version =
+                    version.trim_start_matches('[').trim_end_matches(']').to_string();
 
                 let mut sections: Vec<(String, Vec<String>)> = Vec::new();
                 let mut notes: Vec<String> = Vec::new();
@@ -217,15 +238,17 @@ impl ChangelogPanelComponent {
     }
 
     /// Returns new Changelog in case remote one is newer
-    async fn update_changelog(version: String, channel: Channel) -> Result<Option<Self>> {
-        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &channel.0)).await? {
+    async fn update_changelog(version: String) -> Result<Option<Self>> {
+        let changelog_ref = Self::changelog_ref().await;
+        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?
+        {
             Some(remote_version) => {
                 if version != remote_version {
                     debug!(
                         "Changelog version different (Local: {} Remote: {}), fetching...",
                         version, remote_version
                     );
-                    Self::fetch(channel).await
+                    Self::fetch().await
                 } else {
                     debug!("Changelog up-to-date.");
                     Ok(None)
@@ -235,7 +258,7 @@ impl ChangelogPanelComponent {
             // to make sure the player stays informed.
             None => {
                 debug!("Changelog remote version missing, fetching...");
-                Self::fetch(channel).await
+                Self::fetch().await
             },
         }
     }
@@ -266,11 +289,11 @@ impl ChangelogPanelComponent {
         msg: ChangelogPanelMessage,
     ) -> Option<Command<DefaultViewMessage>> {
         match msg {
-            ChangelogPanelMessage::LoadChangelog(result, channel) => match result {
+            ChangelogPanelMessage::LoadChangelog(result) => match result {
                 Ok(changelog) => {
                     *self = changelog;
                     Some(Command::perform(
-                        Self::update_changelog(self.etag.clone(), channel),
+                        Self::update_changelog(self.etag.clone()),
                         |update| {
                             DefaultViewMessage::ChangelogPanel(
                                 ChangelogPanelMessage::UpdateChangelog(update),
@@ -280,7 +303,7 @@ impl ChangelogPanelComponent {
                 },
                 Err(e) => {
                     tracing::trace!(?e, "Failed to load changelog");
-                    Some(Command::perform(Self::fetch(channel), |update| {
+                    Some(Command::perform(Self::fetch(), |update| {
                         DefaultViewMessage::ChangelogPanel(
                             ChangelogPanelMessage::UpdateChangelog(update),
                         )

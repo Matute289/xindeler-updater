@@ -27,6 +27,13 @@ pub const LOG_FILE: &str = "xindeler-updater.log";
 // For querying
 pub const CHANGELOG_URL: &str =
     "https://raw.githubusercontent.com/Matute289/xindeler-new-horizon/{tag}/CHANGELOG.md";
+// {tag} above is filled in with the newest semver tag from this endpoint (falling back to
+// the default branch if the lookup fails, e.g. offline). The game repo doesn't publish
+// GitHub Releases, only raw tags, so this - not /releases/latest - is the right endpoint.
+pub const GAME_REPO_TAGS_URL: &str =
+    "https://api.github.com/repos/Matute289/xindeler-new-horizon/tags?per_page=30";
+// Used when the tags lookup fails and there's no cached changelog to fall back to.
+pub const CHANGELOG_FALLBACK_REF: &str = "development";
 // NOTE: nothing has confirmed the xindeler.com paths/subdomains below (news RSS, auth server,
 // server list) actually exist yet. Each needs a real, live endpoint (or the feature reading it
 // needs to be disabled) before this client is distributed to players.

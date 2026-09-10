@@ -47,3 +47,31 @@ pub(crate) fn get_etag(x: &reqwest::Response) -> String {
 pub(crate) async fn query<U: IntoUrl>(url: U) -> Result<reqwest::Response> {
     Ok(WEB_CLIENT.get(url).send().await?)
 }
+
+#[derive(serde::Deserialize)]
+struct GithubTag {
+    name: String,
+}
+
+/// Returns the newest semver tag (e.g. "v0.25.4") in the game repo, per
+/// `consts::GAME_REPO_TAGS_URL`. The repo only publishes raw git tags, not GitHub
+/// Releases, so this can't use the simpler `/releases/latest` endpoint - it fetches the
+/// tag list and picks the highest semver itself, since GitHub doesn't guarantee the tags
+/// endpoint is chronologically ordered.
+pub(crate) async fn fetch_latest_game_tag() -> Result<String> {
+    let tags: Vec<GithubTag> = GITHUB_CLIENT
+        .get(crate::consts::GAME_REPO_TAGS_URL)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    tags.into_iter()
+        .filter_map(|tag| {
+            let version = semver::Version::parse(tag.name.trim_start_matches('v')).ok()?;
+            Some((version, tag.name))
+        })
+        .max_by(|(a, _), (b, _)| a.cmp(b))
+        .map(|(_, name)| name)
+        .ok_or_else(|| "No semver-tagged releases found".to_string().into())
+}
