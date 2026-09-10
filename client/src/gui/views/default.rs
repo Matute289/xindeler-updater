@@ -3,8 +3,8 @@ use crate::{
     gui::{
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
-            ChangelogPanelComponent, ChangelogPanelMessage, CommunityShowcaseComponent,
-            CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
+            ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
+            GamePanelMessage,
             LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
@@ -31,7 +31,6 @@ pub struct DefaultView {
     changelog_panel_component: ChangelogPanelComponent,
     announcement_panel_component: AnnouncementPanelComponent,
     logo_panel_component: LogoPanelComponent,
-    community_showcase_component: CommunityShowcaseComponent,
     game_panel_component: GamePanelComponent,
     news_panel_component: NewsPanelComponent,
     settings_panel_component: SettingsPanelComponent,
@@ -56,7 +55,6 @@ pub enum DefaultViewMessage {
     GamePanel(GamePanelMessage),
     ChangelogPanel(ChangelogPanelMessage),
     AnnouncementPanel(AnnouncementPanelMessage),
-    CommunityShowcasePanel(CommunityShowcasePanelMessage),
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
     ServerBrowserPanel(ServerBrowserPanelMessage),
@@ -100,28 +98,25 @@ impl DefaultView {
             announcement_panel_component,
             news_panel_component,
             logo_panel_component,
-            community_showcase_component,
             game_panel_component,
             settings_panel_component,
             server_browser_panel_component,
             ..
         } = self;
 
-        let left_middle_contents = if self.show_settings {
-            settings_panel_component.view(active_profile)
-        } else {
-            community_showcase_component.view()
-        };
+        let mut left_column =
+            column![].push(container(logo_panel_component.view()).height(Length::Fill));
+        if self.show_settings {
+            left_column = left_column.push(
+                container(settings_panel_component.view(active_profile))
+                    .height(Length::Shrink),
+            );
+        }
+        left_column = left_column.push(
+            container(game_panel_component.view(active_profile)).height(Length::Shrink),
+        );
 
-        let left = container(
-            column![]
-                .push(container(logo_panel_component.view()).height(Length::Fill))
-                .push(container(left_middle_contents).height(Length::Shrink))
-                .push(
-                    container(game_panel_component.view(active_profile))
-                        .height(Length::Shrink),
-                ),
-        )
+        let left = container(left_column)
         .height(Length::Fill)
         .width(Length::Fixed(360.0))
         .style(ContainerStyle::SidePanel);
@@ -204,16 +199,6 @@ impl DefaultView {
                         },
                     ),
                     Command::perform(
-                        CommunityShowcaseComponent::load_community_posts(),
-                        |update| {
-                            DefaultViewMessage::CommunityShowcasePanel(
-                                CommunityShowcasePanelMessage::RssUpdate(UpdateRssFeed(
-                                    update,
-                                )),
-                            )
-                        },
-                    ),
-                    Command::perform(
                         Channels::fetch(active_profile.channel_url()),
                         |channels| {
                             DefaultViewMessage::SettingsPanel(
@@ -246,11 +231,6 @@ impl DefaultView {
             },
             DefaultViewMessage::AnnouncementPanel(msg) => {
                 if let Some(command) = self.announcement_panel_component.update(msg) {
-                    return command;
-                }
-            },
-            DefaultViewMessage::CommunityShowcasePanel(msg) => {
-                if let Some(command) = self.community_showcase_component.update(msg) {
                     return command;
                 }
             },

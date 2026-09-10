@@ -1,9 +1,9 @@
 #[cfg(windows)]
 use crate::gui::style::TOMATO_RED;
 use crate::gui::style::{
-    XindelerUpdaterTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
-    LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE,
-    TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
+    XindelerUpdaterTheme, CORNFLOWER_BLUE, DISCORD_BLURPLE, LIGHT_GREY, LIME_GREEN,
+    MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE, TWITCH_PURPLE,
+    VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
     Background, Border, Color, Vector,
@@ -16,7 +16,6 @@ pub enum ButtonStyle {
     XindelerUpdaterDownload,
     ServerListEntry(ServerListEntryButtonState),
     Browser(BrowserButtonStyle),
-    NextPrev,
     Transparent,
     Settings,
     ColumnHeading,
@@ -86,7 +85,6 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 server_list_entry_not_selected_style_active()
             },
             ButtonStyle::Browser(style) => browser_button_style_active(*style),
-            ButtonStyle::NextPrev => next_prev_button_style(),
             ButtonStyle::Transparent => transparent_button_style(),
             ButtonStyle::Settings => settings_button_style_active(),
             ButtonStyle::ColumnHeading => column_heading_button_style(),
@@ -215,14 +213,6 @@ fn browser_button_style_hovered(style: BrowserButtonStyle) -> Appearance {
     Appearance {
         background: Some(Background::Color(color)),
         ..browser_button_style_active(style)
-    }
-}
-
-fn next_prev_button_style() -> Appearance {
-    Appearance {
-        background: None,
-        text_color: DARK_WHITE,
-        ..Appearance::default()
     }
 }
 
