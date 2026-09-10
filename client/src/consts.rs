@@ -27,10 +27,9 @@ pub const LOG_FILE: &str = "xindeler-updater.log";
 // For querying
 pub const CHANGELOG_URL: &str =
     "https://raw.githubusercontent.com/Matute289/xindeler-new-horizon/{tag}/CHANGELOG.md";
-// NOTE: the xindeler.com paths/subdomains below (news RSS, auth server, server list) are a
-// direct domain swap from Veloren's own equivalents — nothing has confirmed any of these
-// actually exist yet on xindeler.com. Each needs a real, live endpoint (or the feature reading
-// it needs to be disabled) before this client is distributed to players.
+// NOTE: nothing has confirmed the xindeler.com paths/subdomains below (news RSS, auth server,
+// server list) actually exist yet. Each needs a real, live endpoint (or the feature reading it
+// needs to be disabled) before this client is distributed to players.
 // For user linking
 pub const NEWS_URL: &str = "https://xindeler.com/rss.xml";
 
@@ -47,6 +46,6 @@ pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.xindeler.com";
 
 // NOTE: placeholder until there's a real "get your server listed" doc page (xindeler-wiki or
 // xindeler-documentation) to point to — an issue against the game repo is at least a real,
-// working destination today, unlike the old Veloren GitLab wiki link it replaces.
+// working destination today.
 pub const SERVER_LISTING_REQUEST_URL: &str =
     "https://github.com/Matute289/xindeler-new-horizon/issues/new";

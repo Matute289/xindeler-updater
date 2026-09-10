@@ -4,7 +4,7 @@ services:
   xindeler-updater:
     container_name: XindelerUpdater
     restart: always
-    image: registry.gitlab.com/veloren/airshipper/server:master
+    build: .
     volumes:
       - "./data:/opt/app/data"
       - "./config:/opt/app/config"

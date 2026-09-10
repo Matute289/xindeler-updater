@@ -38,8 +38,7 @@ impl LogoPanelComponent {
                             "Create Account",
                         )),
                     // Donate link removed for now: Xindeler doesn't have its own
-                    // donation page yet, and the old Veloren opencollective link
-                    // shouldn't be sending Xindeler players' money there.
+                    // donation page yet.
                 )
                 .padding([40, 0, 0, 0]),
             );

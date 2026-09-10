@@ -2,9 +2,6 @@
 
 A cross-platform launcher/updater for Xindeler.
 
-Forked from [Airshipper](https://gitlab.com/veloren/airshipper) (Veloren's own launcher), rebranded
-and repointed at Xindeler's own releases. See `docs/design` (private repo) for the full port plan.
-
 ## Features
 
 - [x] Update/Download and start the game.
