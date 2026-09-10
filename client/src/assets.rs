@@ -13,6 +13,21 @@ pub const UP_RIGHT_ARROW_ICON: &[u8] =
     include_bytes!("../assets/icons/up_right_arrow.png");
 pub const STAR_ICON: &[u8] = include_bytes!("../assets/icons/star.png");
 
+/// Rotating background art for the sidebar panels. Order doesn't matter.
+pub const BACKGROUND_IMAGES: &[&[u8]] = &[
+    include_bytes!("../assets/images/backgrounds/dragon-castle-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/arcane-sanctum-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/ancient-forest-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/crystal-river-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/darkfire-dungeon-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/front-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/misty-mountains-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/stonehaven-castle-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/village-of-willowdale-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/adventurers-guild-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/xindeler-banner.jpg"),
+];
+
 pub const PING1_ICON: &[u8] = include_bytes!("../assets/icons/ping1.png");
 pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");
 pub const PING3_ICON: &[u8] = include_bytes!("../assets/icons/ping3.png");

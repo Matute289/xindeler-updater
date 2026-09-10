@@ -1,6 +1,8 @@
 use crate::{
+    assets::BACKGROUND_IMAGES,
     channels::Channels,
     gui::{
+        background_image::background_image,
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
             ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
@@ -10,7 +12,6 @@ use crate::{
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
-        style::container::ContainerStyle,
         subscriptions,
         views::Action,
         widget::*,
@@ -19,9 +20,13 @@ use crate::{
 };
 
 use iced::{
-    Command, Length,
-    widget::{column, container, row},
+    Command, ContentFit, Length,
+    widget::{Image, column, container, image::Handle, row},
 };
+use std::time::Duration;
+
+/// How long each background image stays up before rotating to the next one.
+const BACKGROUND_ROTATION_INTERVAL: Duration = Duration::from_secs(12);
 
 #[cfg(windows)]
 use crate::gui::Result;
@@ -37,6 +42,7 @@ pub struct DefaultView {
     server_browser_panel_component: ServerBrowserPanelComponent,
     show_settings: bool,
     show_server_browser: bool,
+    background_index: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -50,6 +56,8 @@ pub enum DefaultViewMessage {
 
     // User Interactions
     Interaction(Interaction),
+
+    BackgroundTick,
 
     // Panel-specific messages
     GamePanel(GamePanelMessage),
@@ -84,6 +92,10 @@ impl DefaultView {
                         ),
                     ),
                 ),
+                Some(
+                    iced::time::every(BACKGROUND_ROTATION_INTERVAL)
+                        .map(|_| DefaultViewMessage::BackgroundTick),
+                ),
             ])
             .flatten(),
         )
@@ -116,10 +128,18 @@ impl DefaultView {
             container(game_panel_component.view(active_profile)).height(Length::Shrink),
         );
 
-        let left = container(left_column)
-        .height(Length::Fill)
-        .width(Length::Fixed(360.0))
-        .style(ContainerStyle::SidePanel);
+        let background_bytes =
+            BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
+        let side_panel_background = || {
+            Image::new(Handle::from_memory(background_bytes))
+                .content_fit(ContentFit::Cover)
+                .width(Length::Fill)
+                .height(Length::Fill)
+        };
+
+        let left = container(background_image(side_panel_background(), left_column))
+            .height(Length::Fill)
+            .width(Length::Fixed(360.0));
 
         let mut main_row = row![].push(left);
 
@@ -136,10 +156,12 @@ impl DefaultView {
             )
             .height(Length::Fill)
             .width(Length::Fill);
-            let right = container(news_panel_component.view())
-                .height(Length::Fill)
-                .width(Length::Fixed(248.0))
-                .style(ContainerStyle::SidePanel);
+            let right = container(background_image(
+                side_panel_background(),
+                news_panel_component.view(),
+            ))
+            .height(Length::Fill)
+            .width(Length::Fixed(248.0));
 
             main_row = main_row.push(middle).push(right);
         } else {
@@ -164,6 +186,10 @@ impl DefaultView {
             // Messages
             // Will be handled by main view
             DefaultViewMessage::Action(_) => {},
+            DefaultViewMessage::BackgroundTick => {
+                self.background_index =
+                    (self.background_index + 1) % BACKGROUND_IMAGES.len();
+            },
             DefaultViewMessage::Query => {
                 let channel = active_profile.channel.clone();
                 let api_version_url = active_profile.api_version_url();

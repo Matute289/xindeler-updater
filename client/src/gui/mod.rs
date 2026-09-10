@@ -1,3 +1,4 @@
+mod background_image;
 pub mod components;
 mod custom_widgets;
 mod rss_feed;
