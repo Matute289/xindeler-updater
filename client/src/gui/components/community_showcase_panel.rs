@@ -96,10 +96,14 @@ impl CommunityShowcaseComponent {
             CommunityShowcasePanelMessage::PostOffsetChange(post_offset_change) => {
                 match post_offset_change {
                     PostOffsetChange::Increment => {
-                        self.offset = min(self.offset + 1, self.posts.len() - 1);
+                        self.offset =
+                            min(self.offset + 1, self.posts.len().saturating_sub(1));
                     },
                     PostOffsetChange::Decrement => {
-                        self.offset = (self.offset - 1).clamp(0, self.posts.len() - 1)
+                        self.offset = self
+                            .offset
+                            .saturating_sub(1)
+                            .min(self.posts.len().saturating_sub(1))
                     },
                 };
 
@@ -206,5 +210,50 @@ impl CommunityPost {
                 CommunityShowcaseComponent::IMAGE_WIDTH as f32,
             ))
             .into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn offset_change_on_empty_posts_does_not_panic() {
+        let mut component = CommunityShowcaseComponent::default();
+        assert!(component.posts.is_empty());
+
+        component.update(CommunityShowcasePanelMessage::PostOffsetChange(
+            PostOffsetChange::Increment,
+        ));
+        assert_eq!(component.offset, 0);
+
+        component.update(CommunityShowcasePanelMessage::PostOffsetChange(
+            PostOffsetChange::Decrement,
+        ));
+        assert_eq!(component.offset, 0);
+    }
+
+    #[test]
+    fn offset_change_with_posts_still_clamps_correctly() {
+        let mut component = CommunityShowcaseComponent::default();
+        component.posts = vec![
+            CommunityPost::default(),
+            CommunityPost::default(),
+            CommunityPost::default(),
+        ];
+
+        for _ in 0..5 {
+            component.update(CommunityShowcasePanelMessage::PostOffsetChange(
+                PostOffsetChange::Increment,
+            ));
+        }
+        assert_eq!(component.offset, 2);
+
+        for _ in 0..5 {
+            component.update(CommunityShowcasePanelMessage::PostOffsetChange(
+                PostOffsetChange::Decrement,
+            ));
+        }
+        assert_eq!(component.offset, 0);
     }
 }
