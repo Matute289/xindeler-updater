@@ -2,7 +2,7 @@ use crate::{
     assets::BACKGROUND_IMAGES,
     channels::Channels,
     gui::{
-        background_image::background_image,
+        background_image::{background_image, centered_cover},
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
             ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
@@ -20,8 +20,8 @@ use crate::{
 };
 
 use iced::{
-    Command, ContentFit, Length,
-    widget::{Image, column, container, image::Handle, row},
+    Command, Length,
+    widget::{column, container, image::Handle, row},
 };
 use std::time::Duration;
 
@@ -164,13 +164,9 @@ impl DefaultView {
         // covers its own slice of it, same as any other content sitting on top.
         let background_bytes =
             BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
-        let background = Image::new(Handle::from_memory(background_bytes))
-            .content_fit(ContentFit::Cover)
-            .width(Length::Fill)
-            .height(Length::Fill);
 
         background_image(
-            background,
+            centered_cover(Handle::from_memory(background_bytes)),
             container(main_row).width(Length::Fill).height(Length::Fill),
         )
     }

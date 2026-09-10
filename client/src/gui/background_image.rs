@@ -3,15 +3,95 @@
 //! `container::Appearance` only supports solid colors/gradients as a
 //! background, not images.
 use iced::{
-    Element, Length, Size,
+    ContentFit, Element, Length, Rectangle, Size, Vector,
     advanced::{
         Clipboard, Layout, Shell, Widget,
+        image::{self, Handle},
         layout::{Limits, Node},
         mouse, overlay, renderer,
         widget::{Operation, Tree, tree},
     },
     event::{self, Event},
 };
+
+/// A `Cover`-fit image, cropped centered on overflow in both dimensions.
+///
+/// `iced_widget::image::Image`'s own `ContentFit::Cover` only centers the
+/// dimension that fits; the overflowing dimension is anchored to the
+/// top-left and the overflow past the bottom/right edge gets clipped away
+/// (see `iced_widget::image::draw`'s `offset` calculation, which `.max(0.0)`s
+/// away any negative/centering offset). For a background image that's a
+/// systematic bias - whatever's centered in the source photo ends up pushed
+/// toward the bottom-right of what's visible. This widget fixes that by
+/// always centering the crop.
+pub fn centered_cover<'a, Message, Theme, Renderer>(
+    handle: Handle,
+) -> Element<'a, Message, Theme, Renderer>
+where
+    Renderer: image::Renderer<Handle = Handle> + 'a,
+    Message: 'a,
+    Theme: 'a,
+{
+    Element::new(CoveredImage { handle })
+}
+
+struct CoveredImage {
+    handle: Handle,
+}
+
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for CoveredImage
+where
+    Renderer: image::Renderer<Handle = Handle>,
+{
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fill, Length::Fill)
+    }
+
+    fn layout(
+        &self,
+        _tree: &mut Tree,
+        _renderer: &Renderer,
+        limits: &Limits,
+    ) -> Node {
+        Node::new(limits.resolve(Length::Fill, Length::Fill, Size::ZERO))
+    }
+
+    fn draw(
+        &self,
+        _tree: &Tree,
+        renderer: &mut Renderer,
+        _theme: &Theme,
+        _style: &renderer::Style,
+        layout: Layout<'_>,
+        _cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+    ) {
+        let bounds = layout.bounds();
+        let image_size = {
+            let Size { width, height } = renderer.dimensions(&self.handle);
+            Size::new(width as f32, height as f32)
+        };
+        let adjusted_fit = ContentFit::Cover.fit(image_size, bounds.size());
+
+        let offset = Vector::new(
+            (bounds.width - adjusted_fit.width) / 2.0,
+            (bounds.height - adjusted_fit.height) / 2.0,
+        );
+        let drawing_bounds = Rectangle {
+            width: adjusted_fit.width,
+            height: adjusted_fit.height,
+            ..bounds
+        };
+
+        renderer.with_layer(bounds, |renderer| {
+            renderer.draw(
+                self.handle.clone(),
+                image::FilterMethod::default(),
+                drawing_bounds + offset,
+            );
+        });
+    }
+}
 
 /// Wraps `foreground` so `background` is painted behind it, stretched to
 /// cover the same bounds. All interaction (clicks, tooltips, scrolling) is
