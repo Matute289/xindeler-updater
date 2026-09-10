@@ -1,9 +1,7 @@
-#[cfg(windows)]
-use crate::gui::style::TOMATO_RED;
 use crate::gui::style::{
     XindelerUpdaterTheme, CORNFLOWER_BLUE, DISCORD_BLURPLE, LIGHT_GREY, LIME_GREEN,
-    MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE, TWITCH_PURPLE,
-    VERY_DARK_GREY, YOUTUBE_RED,
+    MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TOMATO_RED, TRANSPARENT_WHITE,
+    TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
     Background, Border, Color, Vector,
@@ -26,6 +24,7 @@ pub enum ButtonStyle {
 pub enum DownloadButtonStyle {
     Launch(ButtonState),
     Update(ButtonState),
+    Cancel,
     #[cfg(windows)]
     Skip,
 }
@@ -74,6 +73,7 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 | DownloadButtonStyle::Update(ButtonState::Disabled) => {
                     disabled_download_button_style()
                 },
+                DownloadButtonStyle::Cancel => active_download_button_style(TOMATO_RED),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => active_download_button_style(TOMATO_RED),
             },
@@ -101,6 +101,7 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 DownloadButtonStyle::Update(ButtonState::Enabled) => {
                     hovered_download_button_style(CORNFLOWER_BLUE)
                 },
+                DownloadButtonStyle::Cancel => hovered_download_button_style(TOMATO_RED),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => hovered_download_button_style(TOMATO_RED),
                 _ => self.active(style),

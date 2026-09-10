@@ -43,6 +43,7 @@ pub enum GamePanelMessage {
     ProcessUpdate(ProcessUpdate),
     DownloadProgress(Box<Option<Progress>>),
     PlayPressed,
+    CancelDownload,
     ServerBrowserServerChanged(Option<String>),
     StartUpdate,
 }
@@ -210,6 +211,13 @@ impl GamePanelComponent {
                 GamePanelState::Updating { .. } | GamePanelState::Playing(..) => {
                     (None, None)
                 },
+            },
+            GamePanelMessage::CancelDownload => match &self.state {
+                GamePanelState::Updating { .. } => {
+                    tracing::info!("Download cancelled by user");
+                    (Some(GamePanelState::Retry), None)
+                },
+                _ => (None, None),
             },
             GamePanelMessage::StartUpdate => {
                 let state = State::ToBeEvaluated(active_profile.clone());
@@ -475,6 +483,25 @@ impl GamePanelComponent {
                         .push(
                             progress_bar(0.0..=100.0f32, percent)
                                 .height(Length::Fixed(28.0)),
+                        )
+                        .push(
+                            container(
+                                button(
+                                    text("Cancel")
+                                        .font(POPPINS_BOLD_FONT)
+                                        .size(14)
+                                        .horizontal_alignment(Horizontal::Center)
+                                        .vertical_alignment(Vertical::Center)
+                                        .width(Length::Fill),
+                                )
+                                .style(ButtonStyle::Download(DownloadButtonStyle::Cancel))
+                                .width(Length::Fill)
+                                .height(Length::Fixed(36.0))
+                                .on_press(DefaultViewMessage::GamePanel(
+                                    GamePanelMessage::CancelDownload,
+                                )),
+                            )
+                            .padding([10, 0, 0, 0]),
                         ),
                 )
                 .into()
