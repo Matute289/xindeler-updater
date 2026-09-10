@@ -29,7 +29,7 @@ impl LogoPanelComponent {
                         ))
                         .push(link_widget(
                             CHAT_ICON,
-                            "https://xindeler.com/joinus/",
+                            "https://discord.com/channels/1515805289339945181",
                             "Community",
                         ))
                         .push(link_widget(
