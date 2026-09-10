@@ -128,16 +128,7 @@ impl DefaultView {
             container(game_panel_component.view(active_profile)).height(Length::Shrink),
         );
 
-        let background_bytes =
-            BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
-        let side_panel_background = || {
-            Image::new(Handle::from_memory(background_bytes))
-                .content_fit(ContentFit::Cover)
-                .width(Length::Fill)
-                .height(Length::Fill)
-        };
-
-        let left = container(background_image(side_panel_background(), left_column))
+        let left = container(left_column)
             .height(Length::Fill)
             .width(Length::Fixed(360.0));
 
@@ -156,12 +147,9 @@ impl DefaultView {
             )
             .height(Length::Fill)
             .width(Length::Fill);
-            let right = container(background_image(
-                side_panel_background(),
-                news_panel_component.view(),
-            ))
-            .height(Length::Fill)
-            .width(Length::Fixed(248.0));
+            let right = container(news_panel_component.view())
+                .height(Length::Fill)
+                .width(Length::Fixed(248.0));
 
             main_row = main_row.push(middle).push(right);
         } else {
@@ -171,10 +159,20 @@ impl DefaultView {
             main_row = main_row.push(server_browser);
         }
 
-        container(main_row)
+        // One background image spans the whole window - the left/right sidebars are
+        // transparent windows onto it, and the opaque middle (changelog) panel just
+        // covers its own slice of it, same as any other content sitting on top.
+        let background_bytes =
+            BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
+        let background = Image::new(Handle::from_memory(background_bytes))
+            .content_fit(ContentFit::Cover)
             .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+            .height(Length::Fill);
+
+        background_image(
+            background,
+            container(main_row).width(Length::Fill).height(Length::Fill),
+        )
     }
 
     pub fn update(
