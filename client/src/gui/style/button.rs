@@ -1,7 +1,7 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, CORNFLOWER_BLUE, DISCORD_BLURPLE, LIGHT_GREY, LIME_GREEN,
-    MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TOMATO_RED, TRANSPARENT_WHITE,
-    TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
+    CORNFLOWER_BLUE, DISCORD_BLURPLE, LIGHT_GREY, LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE,
+    REDDIT_ORANGE, SLATE, TOMATO_RED, TRANSPARENT_WHITE, TWITCH_PURPLE, VERY_DARK_GREY,
+    XindelerUpdaterTheme, YOUTUBE_RED,
 };
 use iced::{
     Background, Border, Color, Vector,
@@ -25,6 +25,7 @@ pub enum DownloadButtonStyle {
     Launch(ButtonState),
     Update(ButtonState),
     Cancel,
+    Dismiss,
     #[cfg(windows)]
     Skip,
 }
@@ -74,10 +75,13 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                     disabled_download_button_style()
                 },
                 DownloadButtonStyle::Cancel => active_download_button_style(TOMATO_RED),
+                DownloadButtonStyle::Dismiss => active_download_button_style(SLATE),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => active_download_button_style(TOMATO_RED),
             },
-            ButtonStyle::XindelerUpdaterDownload => xindeler_updater_download_button_appearance(),
+            ButtonStyle::XindelerUpdaterDownload => {
+                xindeler_updater_download_button_appearance()
+            },
             ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected) => {
                 server_list_entry_selected_style_active()
             },
@@ -102,6 +106,7 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                     hovered_download_button_style(CORNFLOWER_BLUE)
                 },
                 DownloadButtonStyle::Cancel => hovered_download_button_style(TOMATO_RED),
+                DownloadButtonStyle::Dismiss => hovered_download_button_style(SLATE),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => hovered_download_button_style(TOMATO_RED),
                 _ => self.active(style),

@@ -46,6 +46,15 @@ pub enum GamePanelMessage {
     CancelDownload,
     ServerBrowserServerChanged(Option<String>),
     StartUpdate,
+    /// Fired on a timer while the app is open and idle - a no-op unless the game
+    /// is currently installed and playable, in which case it silently re-checks
+    /// for a new version the same way the startup check does.
+    PeriodicUpdateCheck,
+    /// "Actualizar" was pressed, either in the new-version prompt or next to the
+    /// Play button after the prompt was dismissed.
+    ConfirmUpdate,
+    /// "Ahora no" was pressed in the new-version prompt.
+    DismissUpdatePrompt,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,6 +69,21 @@ pub enum GamePanelState {
     Updating {
         astate: Arc<Mutex<Option<State>>>,
         btnstate: DownloadButtonState,
+    },
+    /// A new version was found for a profile that's already installed and playable.
+    /// The "update now?" prompt is shown on top of everything else; the game
+    /// underneath stays on the old, already-installed version until the user
+    /// answers.
+    UpdatePrompt {
+        astate: Arc<Mutex<Option<State>>>,
+        version: String,
+    },
+    /// The user dismissed the prompt above. The old version is still playable, but
+    /// an "Update" button sits next to Play so they can start the update whenever
+    /// they want.
+    UpdateAvailable {
+        astate: Arc<Mutex<Option<State>>>,
+        version: String,
     },
     ReadyToPlay,
     Playing(Box<Profile>),
@@ -85,6 +109,12 @@ impl std::fmt::Debug for GamePanelState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             GamePanelState::Updating { .. } => write!(f, "GamePanelState::Updating"),
+            GamePanelState::UpdatePrompt { .. } => {
+                write!(f, "GamePanelState::UpdatePrompt")
+            },
+            GamePanelState::UpdateAvailable { .. } => {
+                write!(f, "GamePanelState::UpdateAvailable")
+            },
             GamePanelState::ReadyToPlay => write!(f, "GamePanelState::ReadyToPlay"),
             GamePanelState::Playing(_) => write!(f, "GamePanelState::Playing"),
             GamePanelState::Offline(_) => write!(f, "GamePanelState::Offline"),
@@ -216,9 +246,38 @@ impl GamePanelComponent {
                         DownloadButtonState::InProgress,
                     )
                 },
-                GamePanelState::Updating { .. } | GamePanelState::Playing(..) => {
-                    (None, None)
+                GamePanelState::UpdateAvailable { .. } => (
+                    Some(GamePanelState::Playing(Box::new(active_profile.clone()))),
+                    None,
+                ),
+                GamePanelState::Updating { .. }
+                | GamePanelState::UpdatePrompt { .. }
+                | GamePanelState::Playing(..) => (None, None),
+            },
+            GamePanelMessage::ConfirmUpdate => match &self.state {
+                GamePanelState::UpdatePrompt { astate, .. }
+                | GamePanelState::UpdateAvailable { astate, .. } => {
+                    let state = {
+                        let mut l = astate.blocking_lock();
+                        l.take().expect("impossible, should always be filled")
+                    };
+                    Self::trigger_next_state(
+                        state,
+                        astate.clone(),
+                        DownloadButtonState::InProgress,
+                    )
                 },
+                _ => (None, None),
+            },
+            GamePanelMessage::DismissUpdatePrompt => match &self.state {
+                GamePanelState::UpdatePrompt { astate, version } => (
+                    Some(GamePanelState::UpdateAvailable {
+                        astate: astate.clone(),
+                        version: version.clone(),
+                    }),
+                    None,
+                ),
+                _ => (None, None),
             },
             GamePanelMessage::CancelDownload => match &self.state {
                 GamePanelState::Updating { .. } => {
@@ -232,6 +291,17 @@ impl GamePanelComponent {
 
                 let astate = Arc::new(Mutex::new(None));
                 Self::trigger_next_state(state, astate, DownloadButtonState::Checking)
+            },
+            GamePanelMessage::PeriodicUpdateCheck => {
+                if matches!(self.state, GamePanelState::ReadyToPlay) {
+                    let state = State::ToBeEvaluated(active_profile.clone());
+                    let astate = Arc::new(Mutex::new(None));
+                    Self::trigger_next_state(state, astate, DownloadButtonState::Checking)
+                } else {
+                    // Don't interrupt an active download, an ongoing play session, or
+                    // a prompt/offline/retry state the user hasn't resolved yet.
+                    (None, None)
+                }
             },
             GamePanelMessage::DownloadProgress(progress) => {
                 let next = match &progress.as_ref() {
@@ -281,10 +351,22 @@ impl GamePanelComponent {
                         self.available_version = Some(version.clone());
                         (
                             if let GamePanelState::Updating { astate, .. } = &self.state {
-                                Some(GamePanelState::Updating {
-                                    astate: astate.clone(),
-                                    btnstate: DownloadButtonState::WaitForConfirm,
-                                })
+                                if active_profile.installed() {
+                                    // Already playable on the old version - ask
+                                    // before disrupting anything, rather than just
+                                    // swapping the Launch button for a Download one.
+                                    Some(GamePanelState::UpdatePrompt {
+                                        astate: astate.clone(),
+                                        version: version.clone(),
+                                    })
+                                } else {
+                                    // Nothing installed yet, there's no "play the old
+                                    // version" option to offer - just ask to download.
+                                    Some(GamePanelState::Updating {
+                                        astate: astate.clone(),
+                                        btnstate: DownloadButtonState::WaitForConfirm,
+                                    })
+                                }
                             } else {
                                 None
                             },
@@ -386,6 +468,67 @@ impl GamePanelComponent {
             )
             .into()
     }
+
+    /// The "a new version is available, update now?" dialog, when there is one to
+    /// show. `default.rs` layers this on top of the whole window so it blocks
+    /// interaction with everything else until answered.
+    pub fn update_prompt(&self) -> Option<Element<'static, GamePanelMessage>> {
+        match &self.state {
+            GamePanelState::UpdatePrompt { version, .. } => {
+                Some(update_prompt_dialog(version))
+            },
+            _ => None,
+        }
+    }
+}
+
+fn update_prompt_dialog(version: &str) -> Element<'static, GamePanelMessage> {
+    let card = container(
+        column![]
+            .align_items(Alignment::Center)
+            .spacing(16)
+            .padding(24)
+            .push(
+                text("New version available")
+                    .font(POPPINS_BOLD_FONT)
+                    .size(20),
+            )
+            .push(
+                text(format!(
+                    "Version {version} is available. Do you want to update now?"
+                ))
+                .size(14)
+                .horizontal_alignment(Horizontal::Center),
+            )
+            .push(
+                row![]
+                    .spacing(10)
+                    .push(
+                        button(text("Not now").size(14))
+                            .style(ButtonStyle::Download(DownloadButtonStyle::Dismiss))
+                            .padding([10, 20])
+                            .on_press(GamePanelMessage::DismissUpdatePrompt),
+                    )
+                    .push(
+                        button(text("Update").font(POPPINS_BOLD_FONT).size(14))
+                            .style(ButtonStyle::Download(DownloadButtonStyle::Update(
+                                ButtonState::Enabled,
+                            )))
+                            .padding([10, 24])
+                            .on_press(GamePanelMessage::ConfirmUpdate),
+                    ),
+            ),
+    )
+    .style(ContainerStyle::ModalDialog)
+    .width(Length::Fixed(380.0));
+
+    container(card)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .align_x(Horizontal::Center)
+        .align_y(Vertical::Center)
+        .style(ContainerStyle::ModalBackdrop)
+        .into()
 }
 
 impl GamePanelComponent {
@@ -393,6 +536,8 @@ impl GamePanelComponent {
         use GamePanelState::*;
         let same = match &self.state {
             Updating { .. } => matches!(state, Updating { .. }),
+            UpdatePrompt { .. } => matches!(state, UpdatePrompt { .. }),
+            UpdateAvailable { .. } => matches!(state, UpdateAvailable { .. }),
             ReadyToPlay => matches!(state, ReadyToPlay),
             Playing(_) => matches!(state, Playing(_)),
             Offline(_) => matches!(state, Offline(_)),
@@ -406,6 +551,42 @@ impl GamePanelComponent {
 
     fn download_area(&self) -> Element<'_, DefaultViewMessage> {
         match &self.state {
+            GamePanelState::UpdateAvailable { version, .. } => {
+                let play_button = button(
+                    text("Play")
+                        .font(POPPINS_BOLD_FONT)
+                        .size(28)
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center)
+                        .width(Length::Fill),
+                )
+                .style(ButtonStyle::Download(DownloadButtonStyle::Launch(
+                    ButtonState::Enabled,
+                )))
+                .width(Length::FillPortion(2))
+                .height(Length::Fixed(75.0))
+                .on_press(DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed));
+
+                let update_button = button(
+                    column![]
+                        .align_items(Alignment::Center)
+                        .push(text("Update").font(POPPINS_BOLD_FONT).size(16))
+                        .push(text(version.clone()).size(11)),
+                )
+                .style(ButtonStyle::Download(DownloadButtonStyle::Update(
+                    ButtonState::Enabled,
+                )))
+                .width(Length::FillPortion(1))
+                .height(Length::Fixed(75.0))
+                .on_press(DefaultViewMessage::GamePanel(
+                    GamePanelMessage::ConfirmUpdate,
+                ));
+
+                container(row![].push(play_button).push(update_button).spacing(10))
+                    .width(Length::Fill)
+                    .align_y(Vertical::Center)
+                    .into()
+            },
             GamePanelState::Updating { btnstate, .. }
                 if *btnstate == DownloadButtonState::InProgress =>
             {
@@ -509,9 +690,11 @@ impl GamePanelComponent {
                                 .style(ButtonStyle::Download(DownloadButtonStyle::Cancel))
                                 .width(Length::Fill)
                                 .height(Length::Fixed(36.0))
-                                .on_press(DefaultViewMessage::GamePanel(
-                                    GamePanelMessage::CancelDownload,
-                                )),
+                                .on_press(
+                                    DefaultViewMessage::GamePanel(
+                                        GamePanelMessage::CancelDownload,
+                                    ),
+                                ),
                             )
                             .padding([10, 0, 0, 0]),
                         ),
@@ -571,6 +754,18 @@ impl GamePanelComponent {
                     ),
                     GamePanelState::Playing(_) => (
                         "Playing",
+                        ButtonStyle::Download(DownloadButtonStyle::Launch(
+                            ButtonState::Disabled,
+                        )),
+                        false,
+                    ),
+                    // The "update now?" prompt covers this button while it's up, so
+                    // it's just shown disabled underneath -
+                    // GamePanelState::UpdateAvailable above is what
+                    // actually renders once the user answers.
+                    GamePanelState::UpdateAvailable { .. } => unreachable!(),
+                    GamePanelState::UpdatePrompt { .. } => (
+                        "Launch",
                         ButtonStyle::Download(DownloadButtonStyle::Launch(
                             ButtonState::Disabled,
                         )),
