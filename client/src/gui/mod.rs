@@ -87,10 +87,23 @@ impl Application for XindelerUpdater {
         #[cfg(windows)]
         crate::windows::hide_non_inherited_console();
 
-        (
-            XindelerUpdater::new(Profile::load()),
-            Command::perform(async {}, |_| Message::Loaded),
-        )
+        // `mut` is only needed to inject a --mock-state override below, which only
+        // exists in debug builds.
+        #[allow(unused_mut)]
+        let mut updater = XindelerUpdater::new(Profile::load());
+
+        #[cfg(debug_assertions)]
+        if let Some(mock_state) = _flags.mock_state {
+            updater.default_view = DefaultView::with_mock_game_panel_state(
+                mock_state,
+                &updater.active_profile,
+            );
+            // Skip the real Query/StartUpdate flow entirely - it would immediately
+            // overwrite the mocked state with a live update check.
+            return (updater, Command::none());
+        }
+
+        (updater, Command::perform(async {}, |_| Message::Loaded))
     }
 
     fn title(&self) -> String {
@@ -211,7 +224,8 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
 
     #[cfg(target_os = "linux")]
     {
-        window_settings.platform_specific.application_id = XindelerUpdater::APP_ID.to_string();
+        window_settings.platform_specific.application_id =
+            XindelerUpdater::APP_ID.to_string();
     }
 
     Settings {
