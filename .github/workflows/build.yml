@@ -101,6 +101,12 @@ jobs:
     name: Build macOS (${{ matrix.arch }})
     needs: [validate]
     runs-on: macos-latest
+    # Same signing/notarization mechanism as xindeler-new-horizon's build.yml (per
+    # Matías: reuse the same Apple cert). `secrets` isn't a permitted context in a
+    # step's `if:`, so route it through `env` first - same reasoning as that file.
+    env:
+      HAS_APPLE_CERT: ${{ secrets.APPLE_CERT_P12_BASE64 != '' }}
+      HAS_APPLE_NOTARY: ${{ secrets.APPLE_API_KEY_ID != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -130,10 +136,65 @@ jobs:
       - name: Build
         run: cargo build --release -p xindeler-updater --target ${{ matrix.target }}
 
+      - name: Import signing certificate
+        if: ${{ env.HAS_APPLE_CERT == 'true' }}
+        env:
+          APPLE_CERT_P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          echo "$APPLE_CERT_P12_BASE64" | base64 --decode > cert.p12
+          security import cert.p12 -k build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          EXISTING_KEYCHAINS=$(security list-keychains -d user | tr -d '"')
+          # Word-splitting here is the intent: each keychain path is one word.
+          # shellcheck disable=SC2086
+          security list-keychains -d user -s build.keychain $EXISTING_KEYCHAINS
+          rm -f cert.p12
+
+      - name: Sign
+        if: ${{ env.HAS_APPLE_CERT == 'true' }}
+        # No custom entitlements needed here (unlike xindeler-voxygen, which needs
+        # wasmtime JIT allowances) - the updater doesn't run a JIT/plugin system, so
+        # the hardened runtime's defaults are enough.
+        run: |
+          IDENTITY="$(security find-identity -v -p codesigning build.keychain | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.+)"/\1/')"
+          codesign --force --options runtime --timestamp \
+            --sign "$IDENTITY" "target/${{ matrix.target }}/release/xindeler-updater"
+          codesign --verify --strict "target/${{ matrix.target }}/release/xindeler-updater"
+
       - name: Package
+        # Zipped rather than tar.gz'd - notarytool only accepts .zip/.dmg/.pkg, and a
+        # signed-but-unnotarized binary still gets a Gatekeeper warning on first run.
         run: |
           mkdir -p dist
-          tar -C "target/${{ matrix.target }}/release" -czf "dist/xindeler-updater-macos-${{ matrix.arch }}.tar.gz" xindeler-updater
+          zip -j "xindeler-updater-macos-${{ matrix.arch }}.zip" "target/${{ matrix.target }}/release/xindeler-updater"
+
+      - name: Notarize
+        if: ${{ env.HAS_APPLE_CERT == 'true' && env.HAS_APPLE_NOTARY == 'true' }}
+        env:
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+        run: |
+          echo "$APPLE_API_KEY_P8_BASE64" | base64 --decode > AuthKey.p8
+          xcrun notarytool submit "xindeler-updater-macos-${{ matrix.arch }}.zip" \
+            --key AuthKey.p8 \
+            --key-id "${{ secrets.APPLE_API_KEY_ID }}" \
+            --issuer "${{ secrets.APPLE_API_ISSUER_ID }}" \
+            --wait
+          rm -f AuthKey.p8
+          # Stapling a raw binary inside a zip isn't supported (only
+          # .app/.dmg/.pkg can carry a staple) - Gatekeeper instead checks
+          # online against Apple's notarization database, which needs network
+          # access on first run but requires no further action here.
+
+      - name: Rename package if unsigned (no secrets configured yet)
+        if: ${{ env.HAS_APPLE_CERT != 'true' }}
+        run: mv "xindeler-updater-macos-${{ matrix.arch }}.zip" "xindeler-updater-macos-${{ matrix.arch }}-unsigned.zip"
+
+      - run: mv xindeler-updater-macos-*.zip dist/
 
       - uses: actions/upload-artifact@v4
         with:
