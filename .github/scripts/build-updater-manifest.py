@@ -12,17 +12,30 @@ import os
 import re
 import sys
 
-# (filename regex, os, arch, whether this platform can be code-signed)
+# (filename regex, os, arch, signed value or "unsigned-suffix" to derive it from
+# the "-unsigned" filename convention, which only macOS's codesign fallback uses)
 PATTERNS = [
     (r"^xindeler-updater-linux-x86_64\.tar\.gz$", "linux", "x86_64", False),
     (r"^xindeler-updater-linux-aarch64\.tar\.gz$", "linux", "aarch64", False),
-    (r"^xindeler-updater-macos-x86_64(-unsigned)?\.zip$", "macos", "x86_64", True),
-    (r"^xindeler-updater-macos-aarch64(-unsigned)?\.zip$", "macos", "aarch64", True),
     (
-        r"^xindeler-updater-windows-x86_64-installer(-unsigned)?\.exe$",
+        r"^xindeler-updater-macos-x86_64(-unsigned)?\.zip$",
+        "macos",
+        "x86_64",
+        "unsigned-suffix",
+    ),
+    (
+        r"^xindeler-updater-macos-aarch64(-unsigned)?\.zip$",
+        "macos",
+        "aarch64",
+        "unsigned-suffix",
+    ),
+    (
+        # Windows is never code-signed (no cert - would require a paid
+        # DigiCert/Sectigo cert distinct from the Apple one, decided against).
+        r"^xindeler-updater-windows-x86_64-installer\.exe$",
         "windows",
         "x86_64",
-        True,
+        False,
     ),
 ]
 
@@ -48,10 +61,13 @@ def main():
     platforms = []
     matched_files = set()
     for filename in sorted(os.listdir(dist_dir)):
-        for pattern, os_name, arch, can_sign in PATTERNS:
+        for pattern, os_name, arch, signed_spec in PATTERNS:
             if re.match(pattern, filename):
                 path = os.path.join(dist_dir, filename)
-                signed = ("-unsigned" not in filename) if can_sign else None
+                if signed_spec == "unsigned-suffix":
+                    signed = "-unsigned" not in filename
+                else:
+                    signed = signed_spec
                 platforms.append(
                     {
                         "os": os_name,
