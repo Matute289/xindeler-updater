@@ -139,6 +139,64 @@ impl Default for GamePanelComponent {
     }
 }
 
+#[cfg(debug_assertions)]
+impl GamePanelComponent {
+    /// Builds a component already in the given mock state, for `--mock-state`
+    /// manual visual testing without a real install/server.
+    ///
+    /// `astate` is filled with a real `State::ToBeEvaluated` wrapping the current
+    /// profile rather than left empty, so clicking Update/Download in a mocked
+    /// state does a real re-check instead of panicking on the empty-Mutex
+    /// `.expect(...)` the real confirm flow relies on.
+    pub fn mock(mock_state: crate::cli::MockGameState, active_profile: &Profile) -> Self {
+        use crate::cli::MockGameState;
+
+        const MOCK_VERSION: &str = "0.99.0-mock";
+        let fresh_astate = || {
+            Arc::new(Mutex::new(Some(State::ToBeEvaluated(
+                active_profile.clone(),
+            ))))
+        };
+
+        let state = match mock_state {
+            MockGameState::Ready => GamePanelState::ReadyToPlay,
+            MockGameState::Checking => GamePanelState::Updating {
+                astate: fresh_astate(),
+                btnstate: DownloadButtonState::Checking,
+            },
+            MockGameState::WaitForConfirm => GamePanelState::Updating {
+                astate: fresh_astate(),
+                btnstate: DownloadButtonState::WaitForConfirm,
+            },
+            MockGameState::UpdatePrompt => GamePanelState::UpdatePrompt {
+                astate: fresh_astate(),
+                version: MOCK_VERSION.to_owned(),
+            },
+            MockGameState::UpdateAvailable => GamePanelState::UpdateAvailable {
+                astate: fresh_astate(),
+                version: MOCK_VERSION.to_owned(),
+            },
+            MockGameState::OfflinePlayable => GamePanelState::Offline(true),
+            MockGameState::OfflineUnplayable => GamePanelState::Offline(false),
+            MockGameState::Retry => GamePanelState::Retry,
+        };
+
+        let available_version = matches!(
+            mock_state,
+            MockGameState::WaitForConfirm
+                | MockGameState::UpdatePrompt
+                | MockGameState::UpdateAvailable
+        )
+        .then(|| MOCK_VERSION.to_owned());
+
+        Self {
+            state,
+            available_version,
+            ..Default::default()
+        }
+    }
+}
+
 impl GamePanelComponent {
     pub fn subscription(&self) -> iced::Subscription<GamePanelMessage> {
         match &self.state {

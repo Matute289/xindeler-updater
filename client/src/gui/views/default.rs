@@ -76,6 +76,21 @@ pub struct DefaultView {
 /// How long the "updated successfully" toast stays up before clearing itself.
 const TOAST_DURATION: Duration = Duration::from_secs(5);
 
+#[cfg(debug_assertions)]
+impl DefaultView {
+    /// Builds a `DefaultView` with the game panel pre-set to a specific mock
+    /// state, for `--mock-state` manual visual testing.
+    pub fn with_mock_game_panel_state(
+        mock_state: crate::cli::MockGameState,
+        active_profile: &Profile,
+    ) -> Self {
+        Self {
+            game_panel_component: GamePanelComponent::mock(mock_state, active_profile),
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum DefaultViewMessage {
     // Messages

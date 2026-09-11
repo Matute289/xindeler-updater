@@ -9,6 +9,8 @@ use iced::futures::stream::StreamExt;
 
 use crate::{BASE_PATH, error::ClientError, profiles::LogLevel};
 pub use parse::CmdLine;
+#[cfg(debug_assertions)]
+pub use parse::MockGameState;
 use tracing::level_filters::LevelFilter;
 
 /// Process command line arguments and optionally starts GUI
@@ -58,7 +60,8 @@ pub fn process() -> Result<()> {
     #[cfg(windows)]
     if let Ok(Some(release)) = crate::windows::query() {
         tracing::info!(
-            "New XindelerUpdater release found: {}. Run `xindeler-updater upgrade` to update.",
+            "New XindelerUpdater release found: {}. Run `xindeler-updater upgrade` to \
+             update.",
             release.version
         );
     }
@@ -180,7 +183,9 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
 
 async fn start(profile: &Profile, game_server_address: Option<String>) -> Result<()> {
     if !profile.installed() {
-        tracing::info!("Profile is not installed. Install it via `xindeler-updater update`");
+        tracing::info!(
+            "Profile is not installed. Install it via `xindeler-updater update`"
+        );
         return Ok(());
     }
 
