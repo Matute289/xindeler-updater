@@ -230,6 +230,19 @@ jobs:
       - name: Install NSIS
         run: choco install nsis -y --no-progress
 
+      - name: Install EnVar NSIS plugin
+        # installer.nsi calls EnVar:: (adds the install dir to PATH) - not part of
+        # NSIS's own base install, confirmed by v0.1.0's real run: "Plugin not found,
+        # cannot call EnVar::SetHKCU". Fetched from the plugin's official download on
+        # its NSIS wiki page (stable URL, this exact fetch-and-copy-into-Plugins
+        # pattern is how most CI pipelines pull in third-party NSIS plugins, since
+        # choco's nsis package only ships upstream-bundled plugins).
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip" -OutFile envar.zip
+          Expand-Archive -Path envar.zip -DestinationPath envar-extracted
+          Copy-Item -Path "envar-extracted\Plugins\*" -Destination "C:\Program Files (x86)\NSIS\Plugins\" -Recurse -Force
+
       - name: Stage binary for the installer script
         # installer.nsi's File command reads "..\..\xindeler-updater.exe" (two levels
         # up from client/nsis/, i.e. the repo root) - see client/nsis/installer.nsi.
