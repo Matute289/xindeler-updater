@@ -249,10 +249,13 @@ jobs:
           makensis installer.nsi
 
       - name: Package
+        # Renamed for the same os-arch naming convention as the other platforms'
+        # artifacts. Still ends in "installer.exe", which is all windows.rs's
+        # get_asset() self-update matcher actually requires.
         shell: bash
         run: |
           mkdir -p dist
-          cp client/nsis/xindeler-updater-installer.exe dist/
+          cp client/nsis/xindeler-updater-installer.exe dist/xindeler-updater-windows-x86_64-installer.exe
 
       - uses: actions/upload-artifact@v4
         with:
@@ -280,3 +283,24 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "$VERSION" \
             --generate-notes
+
+      - name: Build updater-latest.json manifest
+        # Same {version, platforms: [{os, arch, file, size, sha256, signed}]} shape
+        # downloads.xindeler.com/latest.json already uses - see NH-145.
+        run: |
+          python3 .github/scripts/build-updater-manifest.py "$VERSION" dist updater-latest.json
+
+      - name: Publish to the VPS (updater-releases/, per NH-145)
+        # xindeler-web-api's new download endpoint (that repo's own PR #38) reads
+        # from here. GitHub Releases above stays up too, in parallel - this doesn't
+        # replace it, it's what xindeler.com's download page will link to instead.
+        # VPS_SSH_KEY is scoped via rrsync to updater-releases/ only (not the shared
+        # unrestricted deploy key) - destination paths must be relative, no
+        # /srv/... prefix; rrsync roots them at that directory automatically.
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.VPS_SSH_KEY }}"
+          mkdir -p ~/.ssh
+          ssh-keyscan greenmountain.dev >> ~/.ssh/known_hosts
+          rsync -avz --mkpath dist/ "mgrinberg@greenmountain.dev:${VERSION}/"
+          rsync -avz updater-latest.json "mgrinberg@greenmountain.dev:updater-latest.json"
