@@ -242,11 +242,17 @@ jobs:
 
       - name: Build installer
         shell: bash
-        # choco's nsis package puts makensis on PATH; installer.nsi's own File/OutFile
-        # paths are relative to this working directory (see the "Stage binary" step).
+        # choco updates the machine PATH via the registry, but this job's Git Bash
+        # process already had its own env loaded before that ran, so `makensis` isn't
+        # found on PATH here even though it truly is installed (confirmed via
+        # v0.1.0's real run: "Deployed to 'C:\Program Files (x86)\NSIS'" logged during
+        # install, then "makensis: command not found" two steps later). Full path
+        # sidesteps needing a fresh shell/process to pick up the PATH change.
+        # installer.nsi's own File/OutFile paths are relative to this working
+        # directory (see the "Stage binary" step).
         run: |
           cd client/nsis
-          makensis installer.nsi
+          "/c/Program Files (x86)/NSIS/makensis.exe" installer.nsi
 
       - name: Package
         # Renamed for the same os-arch naming convention as the other platforms'
