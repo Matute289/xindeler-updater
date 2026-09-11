@@ -25,10 +25,8 @@ pub enum ClientError {
     #[error("Error while updating the game: {0}")]
     GameUpdate(String),
 
-    #[cfg(windows)]
     #[error("FATAL: Failed to update xindeler-updater! Error: {0}")]
     SelfUpdate(String),
-    #[cfg(windows)]
     #[error("Failed to parse version: {0}")]
     Version(String),
 
@@ -60,9 +58,7 @@ impl_from!(remozipsy::Error<
     <remozipsy::reqwest::ReqwestRemoteZip<reqwest::Client> as remozipsy::RemoteZip>::Error,
     <remozipsy::tokio::TokioLocalStorage as remozipsy::FileSystem>::Error,
 >, ClientError::GameUpdate);
-#[cfg(windows)]
 impl_from!(self_update::errors::Error, ClientError::SelfUpdate);
-#[cfg(windows)]
 impl_from!(semver::Error, ClientError::Version);
 impl_from!(String, ClientError::Custom);
 

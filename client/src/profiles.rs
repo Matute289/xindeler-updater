@@ -37,6 +37,19 @@ pub struct Profile {
     /// used to avoid duplicate redownload of patched binaries on nixos
     pub patched_crc32s: Vec<PatchedInfo>,
 
+    /// If true, a new game or launcher version is downloaded/installed/replaced
+    /// automatically as soon as it's found, with no confirmation prompt - just a
+    /// one-time "updated successfully" notice once it's done. `#[serde(default)]` so
+    /// profiles saved before this field existed still load (defaulting to false, the
+    /// safer opt-in behavior).
+    #[serde(default)]
+    pub auto_update: bool,
+    /// Set right before an auto-applied launcher update replaces/relaunches the
+    /// process, so the new process can show a one-time "updated successfully" notice
+    /// on its next startup instead of silently going quiet.
+    #[serde(default)]
+    pub pending_launcher_update_notice: Option<String>,
+
     #[serde(skip)]
     pub supported_wgpu_backends: Vec<WgpuBackend>,
     #[serde(skip)]
@@ -197,6 +210,8 @@ impl Profile {
             env_vars: String::new(),
             assets_override: None,
             patched_crc32s: Vec::new(),
+            auto_update: false,
+            pending_launcher_update_notice: None,
             supported_wgpu_backends: Vec::new(),
             wgpu_device: WgpuDevice::Auto,
             supported_wgpu_devices: Vec::new(),

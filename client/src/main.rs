@@ -5,6 +5,7 @@ mod consts;
 mod error;
 mod gui;
 mod io;
+mod launcher_update;
 mod logger;
 mod net;
 #[cfg(unix)]

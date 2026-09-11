@@ -7,7 +7,10 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
-        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
+        style::{
+            button::ButtonStyle, checkbox::CheckboxStyle, container::ContainerStyle,
+            text::TextStyle,
+        },
         views::{
             Action,
             default::{DefaultViewMessage, Interaction},
@@ -21,8 +24,8 @@ use iced::{
     Alignment, Command, Length,
     alignment::Horizontal,
     widget::{
-        Image, button, column, container, image, image::Handle, pick_list, row, text,
-        text_input, tooltip, tooltip::Position,
+        Image, button, checkbox, column, container, image, image::Handle, pick_list, row,
+        text, text_input, tooltip, tooltip::Position,
     },
 };
 use tracing::debug;
@@ -40,6 +43,7 @@ pub enum SettingsPanelMessage {
     AssetsOverridePicked(Option<PathBuf>),
     OpenLogsPressed,
     ChannelsLoaded(Result<Channels>),
+    AutoUpdateToggled(bool),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -159,6 +163,14 @@ impl SettingsPanelComponent {
             SettingsPanelMessage::AssetsOverridePicked(None) => {
                 // user closed the menu, chill out
                 None
+            },
+            SettingsPanelMessage::AutoUpdateToggled(enabled) => {
+                let mut profile = active_profile.clone();
+                profile.auto_update = enabled;
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
             },
             SettingsPanelMessage::ChannelsLoaded(result) => {
                 if let Ok(channels) = result {
@@ -481,12 +493,37 @@ impl SettingsPanelComponent {
         let fourth_row =
             container(row![].align_items(Alignment::End).push(assets_override));
 
+        let auto_update = column![]
+            .spacing(5)
+            .push(
+                checkbox("Auto-update game and launcher", active_profile.auto_update)
+                    .style(CheckboxStyle::Default)
+                    .text_size(FONT_SIZE)
+                    .on_toggle(|enabled| {
+                        DefaultViewMessage::SettingsPanel(
+                            SettingsPanelMessage::AutoUpdateToggled(enabled),
+                        )
+                    }),
+            )
+            .push(
+                text(
+                    "When on, new versions of the game and the launcher download and \
+                     install automatically - no confirmation prompt, just a quick \
+                     notice once it's done.",
+                )
+                .size(10)
+                .style(TextStyle::LightGrey),
+            );
+
+        let fifth_row = container(row![].push(auto_update));
+
         let col = column![]
             .spacing(10)
             .push(first_row)
             .push(second_row)
             .push(third_row)
-            .push(fourth_row);
+            .push(fourth_row)
+            .push(fifth_row);
 
         column![]
             .push(heading_with_rule("Settings"))
