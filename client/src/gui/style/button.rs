@@ -1,8 +1,6 @@
-#[cfg(windows)]
-use crate::gui::style::TOMATO_RED;
 use crate::gui::style::{
-    XindelerUpdaterTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
-    LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE,
+    XindelerUpdaterTheme, CORNFLOWER_BLUE, DISCORD_BLURPLE, LIGHT_GREY, LIME_GREEN,
+    MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TOMATO_RED, TRANSPARENT_WHITE,
     TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
@@ -16,7 +14,6 @@ pub enum ButtonStyle {
     XindelerUpdaterDownload,
     ServerListEntry(ServerListEntryButtonState),
     Browser(BrowserButtonStyle),
-    NextPrev,
     Transparent,
     Settings,
     ColumnHeading,
@@ -27,13 +24,13 @@ pub enum ButtonStyle {
 pub enum DownloadButtonStyle {
     Launch(ButtonState),
     Update(ButtonState),
+    Cancel,
     #[cfg(windows)]
     Skip,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum BrowserButtonStyle {
-    Gitlab,
     Discord,
     Mastodon,
     Reddit,
@@ -76,6 +73,7 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 | DownloadButtonStyle::Update(ButtonState::Disabled) => {
                     disabled_download_button_style()
                 },
+                DownloadButtonStyle::Cancel => active_download_button_style(TOMATO_RED),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => active_download_button_style(TOMATO_RED),
             },
@@ -87,7 +85,6 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 server_list_entry_not_selected_style_active()
             },
             ButtonStyle::Browser(style) => browser_button_style_active(*style),
-            ButtonStyle::NextPrev => next_prev_button_style(),
             ButtonStyle::Transparent => transparent_button_style(),
             ButtonStyle::Settings => settings_button_style_active(),
             ButtonStyle::ColumnHeading => column_heading_button_style(),
@@ -104,6 +101,7 @@ impl button::StyleSheet for XindelerUpdaterTheme {
                 DownloadButtonStyle::Update(ButtonState::Enabled) => {
                     hovered_download_button_style(CORNFLOWER_BLUE)
                 },
+                DownloadButtonStyle::Cancel => hovered_download_button_style(TOMATO_RED),
                 #[cfg(windows)]
                 DownloadButtonStyle::Skip => hovered_download_button_style(TOMATO_RED),
                 _ => self.active(style),
@@ -195,7 +193,6 @@ fn server_list_entry_not_selected_style_hovered() -> Appearance {
 fn browser_button_style_to_color(style: BrowserButtonStyle) -> Color {
     match style {
         BrowserButtonStyle::Discord => *DISCORD_BLURPLE,
-        BrowserButtonStyle::Gitlab => LIME_GREEN,
         BrowserButtonStyle::Extra => LIME_GREEN,
         BrowserButtonStyle::Youtube => *YOUTUBE_RED,
         BrowserButtonStyle::Mastodon => *MASTODON_PURPLE,
@@ -217,14 +214,6 @@ fn browser_button_style_hovered(style: BrowserButtonStyle) -> Appearance {
     Appearance {
         background: Some(Background::Color(color)),
         ..browser_button_style_active(style)
-    }
-}
-
-fn next_prev_button_style() -> Appearance {
-    Appearance {
-        background: None,
-        text_color: DARK_WHITE,
-        ..Appearance::default()
     }
 }
 

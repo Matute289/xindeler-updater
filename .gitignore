@@ -14,7 +14,7 @@ target/
 # IDE
 .idea
 
-airshipper.ron
+xindeler_updater_state.ron
 *.db
 .env
 *.log
@@ -23,9 +23,9 @@ data/
 *.exe
 
 # database
-airshipper.db
-airshipper.db-shm
-airshipper.db-wal
+xindeler-updater.db
+xindeler-updater.db-shm
+xindeler-updater.db-wal
 /local
 
 # OS-specific

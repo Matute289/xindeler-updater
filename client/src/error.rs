@@ -10,7 +10,7 @@ pub enum ClientError {
     Iced(String),
     #[error("Failed to save/load ron data: {0}")]
     Ron(String),
-    #[error("Failed to parse Veloren News: {0}")]
+    #[error("Failed to parse Xindeler News: {0}")]
     Rss(String),
     #[error("Failed to open webbrowser: {0}")]
     Opener(String),

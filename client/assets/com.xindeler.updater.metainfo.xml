@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2021 Adam Blanchet-->
+<component type="desktop-application">
+  <id>com.xindeler.updater</id>
+
+  <name>Xindeler Updater</name>
+  <summary>Xindeler Updater is the official launcher for Xindeler.</summary>
+  <developer id="com.xindeler">
+    <name>The Xindeler Team</name>
+  </developer>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <content_rating type="oars-1.0">
+    <content_attribute id="violence-cartoon">moderate</content_attribute>
+    <content_attribute id="violence-fantasy">moderate</content_attribute>
+    <content_attribute id="language-profanity">mild</content_attribute>
+    <content_attribute id="language-humor">mild</content_attribute>
+    <content_attribute id="social-chat">moderate</content_attribute>
+  </content_rating>
+
+  <releases>
+    <release version="0.17.0" date="2026-01-08"/>
+  </releases>
+
+  <description>
+    <p>
+      Xindeler Updater is the official launcher for Xindeler, the online voxel-based RPG.
+    </p>
+    <p>
+      Xindeler is a multiplayer open world, voxel-based RPG written in Rust.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.xindeler.updater.desktop</launchable>
+
+  <keywords>
+    <keyword>multiplayer</keyword>
+    <keyword>xindeler</keyword>
+  </keywords>
+
+  <url type="bugtracker">https://github.com/Matute289/xindeler-updater/issues</url>
+  <url type="help">https://book.xindeler.com</url>
+  <url type="homepage">https://xindeler.com</url>
+
+</component>

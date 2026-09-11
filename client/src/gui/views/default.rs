@@ -1,16 +1,17 @@
 use crate::{
+    assets::BACKGROUND_IMAGES,
     channels::Channels,
     gui::{
+        background_image::{background_image, centered_cover},
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
-            ChangelogPanelComponent, ChangelogPanelMessage, CommunityShowcaseComponent,
-            CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
+            ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
+            GamePanelMessage,
             LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
-        style::container::ContainerStyle,
         subscriptions,
         views::Action,
         widget::*,
@@ -20,8 +21,12 @@ use crate::{
 
 use iced::{
     Command, Length,
-    widget::{column, container, row},
+    widget::{column, container, image::Handle, row},
 };
+use std::time::Duration;
+
+/// How long each background image stays up before rotating to the next one.
+const BACKGROUND_ROTATION_INTERVAL: Duration = Duration::from_secs(12);
 
 #[cfg(windows)]
 use crate::gui::Result;
@@ -31,13 +36,13 @@ pub struct DefaultView {
     changelog_panel_component: ChangelogPanelComponent,
     announcement_panel_component: AnnouncementPanelComponent,
     logo_panel_component: LogoPanelComponent,
-    community_showcase_component: CommunityShowcaseComponent,
     game_panel_component: GamePanelComponent,
     news_panel_component: NewsPanelComponent,
     settings_panel_component: SettingsPanelComponent,
     server_browser_panel_component: ServerBrowserPanelComponent,
     show_settings: bool,
     show_server_browser: bool,
+    background_index: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -52,11 +57,12 @@ pub enum DefaultViewMessage {
     // User Interactions
     Interaction(Interaction),
 
+    BackgroundTick,
+
     // Panel-specific messages
     GamePanel(GamePanelMessage),
     ChangelogPanel(ChangelogPanelMessage),
     AnnouncementPanel(AnnouncementPanelMessage),
-    CommunityShowcasePanel(CommunityShowcasePanelMessage),
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
     ServerBrowserPanel(ServerBrowserPanelMessage),
@@ -86,6 +92,10 @@ impl DefaultView {
                         ),
                     ),
                 ),
+                Some(
+                    iced::time::every(BACKGROUND_ROTATION_INTERVAL)
+                        .map(|_| DefaultViewMessage::BackgroundTick),
+                ),
             ])
             .flatten(),
         )
@@ -100,31 +110,27 @@ impl DefaultView {
             announcement_panel_component,
             news_panel_component,
             logo_panel_component,
-            community_showcase_component,
             game_panel_component,
             settings_panel_component,
             server_browser_panel_component,
             ..
         } = self;
 
-        let left_middle_contents = if self.show_settings {
-            settings_panel_component.view(active_profile)
-        } else {
-            community_showcase_component.view()
-        };
+        let mut left_column =
+            column![].push(container(logo_panel_component.view()).height(Length::Fill));
+        if self.show_settings {
+            left_column = left_column.push(
+                container(settings_panel_component.view(active_profile))
+                    .height(Length::Shrink),
+            );
+        }
+        left_column = left_column.push(
+            container(game_panel_component.view(active_profile)).height(Length::Shrink),
+        );
 
-        let left = container(
-            column![]
-                .push(container(logo_panel_component.view()).height(Length::Fill))
-                .push(container(left_middle_contents).height(Length::Shrink))
-                .push(
-                    container(game_panel_component.view(active_profile))
-                        .height(Length::Shrink),
-                ),
-        )
-        .height(Length::Fill)
-        .width(Length::Fixed(360.0))
-        .style(ContainerStyle::SidePanel);
+        let left = container(left_column)
+            .height(Length::Fill)
+            .width(Length::Fixed(360.0));
 
         let mut main_row = row![].push(left);
 
@@ -143,8 +149,7 @@ impl DefaultView {
             .width(Length::Fill);
             let right = container(news_panel_component.view())
                 .height(Length::Fill)
-                .width(Length::Fixed(248.0))
-                .style(ContainerStyle::SidePanel);
+                .width(Length::Fixed(248.0));
 
             main_row = main_row.push(middle).push(right);
         } else {
@@ -154,10 +159,16 @@ impl DefaultView {
             main_row = main_row.push(server_browser);
         }
 
-        container(main_row)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        // One background image spans the whole window - the left/right sidebars are
+        // transparent windows onto it, and the opaque middle (changelog) panel just
+        // covers its own slice of it, same as any other content sitting on top.
+        let background_bytes =
+            BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
+
+        background_image(
+            centered_cover(Handle::from_memory(background_bytes)),
+            container(main_row).width(Length::Fill).height(Length::Fill),
+        )
     }
 
     pub fn update(
@@ -169,8 +180,11 @@ impl DefaultView {
             // Messages
             // Will be handled by main view
             DefaultViewMessage::Action(_) => {},
+            DefaultViewMessage::BackgroundTick => {
+                self.background_index =
+                    (self.background_index + 1) % BACKGROUND_IMAGES.len();
+            },
             DefaultViewMessage::Query => {
-                let channel = active_profile.channel.clone();
                 let api_version_url = active_profile.api_version_url();
                 let announcement_url = active_profile.announcement_url();
                 return Command::batch(vec![
@@ -181,9 +195,9 @@ impl DefaultView {
                     }),
                     Command::perform(
                         ChangelogPanelComponent::load_changelog(),
-                        move |update| {
+                        |update| {
                             DefaultViewMessage::ChangelogPanel(
-                                ChangelogPanelMessage::LoadChangelog(update, channel),
+                                ChangelogPanelMessage::LoadChangelog(update),
                             )
                         },
                     ),
@@ -200,16 +214,6 @@ impl DefaultView {
                         |update| {
                             DefaultViewMessage::AnnouncementPanel(
                                 AnnouncementPanelMessage::FetchAnnouncement(update),
-                            )
-                        },
-                    ),
-                    Command::perform(
-                        CommunityShowcaseComponent::load_community_posts(),
-                        |update| {
-                            DefaultViewMessage::CommunityShowcasePanel(
-                                CommunityShowcasePanelMessage::RssUpdate(UpdateRssFeed(
-                                    update,
-                                )),
                             )
                         },
                     ),
@@ -246,11 +250,6 @@ impl DefaultView {
             },
             DefaultViewMessage::AnnouncementPanel(msg) => {
                 if let Some(command) = self.announcement_panel_component.update(msg) {
-                    return command;
-                }
-            },
-            DefaultViewMessage::CommunityShowcasePanel(msg) => {
-                if let Some(command) = self.community_showcase_component.update(msg) {
                     return command;
                 }
             },

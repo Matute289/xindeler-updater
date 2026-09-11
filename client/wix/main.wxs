@@ -30,44 +30,44 @@
 <?endif ?>
 
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-    <Product Id='*' Name='Airshipper' UpgradeCode='1715788C-2FC7-44D7-912D-2B46202C2FD9' Manufacturer='Airshipper contributors' Language='1033' Codepage='1252' Version='$(var.Version)'>
-    <Package Id='*' Keywords='Installer' Description='Provides automatic updates for the voxel RPG Veloren.' Manufacturer='Airshipper contributors' InstallerVersion='450' Languages='1033' Compressed='yes' InstallScope='perMachine' SummaryCodepage='1252' Platform='$(var.Platform)'/>
+    <Product Id='*' Name='Xindeler Updater' UpgradeCode='1715788C-2FC7-44D7-912D-2B46202C2FD9' Manufacturer='Xindeler contributors' Language='1033' Codepage='1252' Version='$(var.Version)'>
+    <Package Id='*' Keywords='Installer' Description='Provides automatic updates for Xindeler.' Manufacturer='Xindeler contributors' InstallerVersion='450' Languages='1033' Compressed='yes' InstallScope='perMachine' SummaryCodepage='1252' Platform='$(var.Platform)'/>
 
     <MajorUpgrade Schedule='afterInstallInitialize' DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
     <Property Id="APPLICATIONFOLDER" Secure="yes">
       <RegistrySearch Id="FindInstallLocation"
           Root="HKCU"
-          Key="Software\Airshipper"
+          Key="Software\XindelerUpdater"
           Name="InstallationPath"
           Type="raw"
           Win64="$(var.Win64)" />
     </Property>
 
     <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-    <Property Id='DiskPrompt' Value='Airshipper Installation'/>
+    <Property Id='DiskPrompt' Value='Xindeler Updater Installation'/>
     <Property Id="START_VIA_REGISTRY">1</Property>
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="Airshipper">
-          <!-- Create shortcut to start Airshipper from taskbar search -->
+        <Directory Id="ApplicationProgramsFolder" Name="Xindeler Updater">
+          <!-- Create shortcut to start Xindeler Updater from taskbar search -->
           <Component Id='ApplicationShortcut' Guid='{E2CD5A52-9B7C-410F-8C85-0D834C435A43}' Win64='$(var.Win64)'>
-            <Shortcut Id='ApplicationStartMenuShortcut' Name='Airshipper' Description='Airshipper' Target='[!airshipper.exe]' WorkingDirectory='APPLICATIONFOLDER' />
-            <Shortcut Id='ApplicationStartMenuCompatibilityShortcut' Name='Airshipper (compatibility mode)' Description="Will update and start Veloren on all kinds of hardware even if Airshipper itself wouldn't be supported." Target="[!airshipper.exe]" Arguments="run" WorkingDirectory="APPLICATIONFOLDER" />
+            <Shortcut Id='ApplicationStartMenuShortcut' Name='Xindeler Updater' Description='Xindeler Updater' Target='[!XindelerUpdaterExe]' WorkingDirectory='APPLICATIONFOLDER' />
+            <Shortcut Id='ApplicationStartMenuCompatibilityShortcut' Name='Xindeler Updater (compatibility mode)' Description="Will update and start Xindeler on all kinds of hardware even if Xindeler Updater itself wouldn't be supported." Target="[!XindelerUpdaterExe]" Arguments="run" WorkingDirectory="APPLICATIONFOLDER" />
             <RemoveFolder Id='CleanUpShortCut' Directory='ApplicationProgramsFolder' On='uninstall'/>
-            <RegistryValue Root='HKCU' Key='Software\Airshipper' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
+            <RegistryValue Root='HKCU' Key='Software\XindelerUpdater' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
             <!-- make upgrading easier by remembering where it was installed -->
-            <RegistryValue Root='HKCU' Key='Software\Airshipper' Name='InstallationPath' Type='string' Value='[APPLICATIONFOLDER]' />
+            <RegistryValue Root='HKCU' Key='Software\XindelerUpdater' Name='InstallationPath' Type='string' Value='[APPLICATIONFOLDER]' />
           </Component>
         </Directory>
       </Directory>
 
       <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-        <Directory Id='APPLICATIONFOLDER' Name='Airshipper'>
-          <!-- Airshipper itself -->
-          <Component Id='airshipper.exe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
-            <File Id='airshipper.exe' Name='airshipper.exe' DiskId='1' Source='target\release\airshipper.exe' KeyPath='yes'/>
+        <Directory Id='APPLICATIONFOLDER' Name='Xindeler Updater'>
+          <!-- Xindeler Updater itself -->
+          <Component Id='XindelerUpdaterExe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
+            <File Id='XindelerUpdaterExe' Name='xindeler-updater.exe' DiskId='1' Source='target\release\xindeler-updater.exe' KeyPath='yes'/>
           </Component>
           <!-- Add to PATH for easier access over terminal -->
           <Component Id='Path' Guid='4a62682d-9dfd-4203-ad35-1e4300ad6a5a' Win64='$(var.Win64)' KeyPath='yes'>
@@ -75,28 +75,28 @@
           </Component>
         </Directory>
       </Directory>
-      
+
       <Directory Id="DesktopFolder" Name="Desktop">
-          <!-- Create shortcut to start Airshipper from the desktop -->
+          <!-- Create shortcut to start Xindeler Updater from the desktop -->
           <Component Id="ApplicationShortcutDesktop" Guid="c2601e65-edf8-4f5a-94ff-0b3e800fe375">
-              <Shortcut Id="ApplicationDesktopShortcut" Name="Airshipper" Description="Provides automatic updates for the voxel RPG Veloren." Target="[!airshipper.exe]" WorkingDirectory='APPLICATIONFOLDER'/>
+              <Shortcut Id="ApplicationDesktopShortcut" Name="Xindeler Updater" Description="Provides automatic updates for Xindeler." Target="[!XindelerUpdaterExe]" WorkingDirectory='APPLICATIONFOLDER'/>
               <RemoveFolder Id="CleanUpDesktopShortcut" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\Airshipper" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+              <RegistryValue Root="HKCU" Key="Software\XindelerUpdater" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
-          <!-- Create compatibility shortcut to start Airshipper from the desktop -->
+          <!-- Create compatibility shortcut to start Xindeler Updater from the desktop -->
           <Component Id="ApplicationShortcutCompatibilityDesktop" Guid="7b3e27ba-0fd5-4dfb-9be3-9614ec25fd9a">
-              <Shortcut Id="ApplicationDesktopCompatibilityShortcut" Name="Airshipper (compatibility mode)" Description="Will update and start Veloren on all kinds of hardware even if Airshipper itself wouldn't be supported." Target="[!airshipper.exe]" Arguments="run" WorkingDirectory='APPLICATIONFOLDER'/>
+              <Shortcut Id="ApplicationDesktopCompatibilityShortcut" Name="Xindeler Updater (compatibility mode)" Description="Will update and start Xindeler on all kinds of hardware even if Xindeler Updater itself wouldn't be supported." Target="[!XindelerUpdaterExe]" Arguments="run" WorkingDirectory='APPLICATIONFOLDER'/>
               <RemoveFolder Id="CleanUpDesktopCompatibilityShortcut" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\Airshipper" Name="DesktopCompatibilityShortcut" Type="integer" Value="1" KeyPath="yes"/>
+              <RegistryValue Root="HKCU" Key="Software\XindelerUpdater" Name="DesktopCompatibilityShortcut" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
       </Directory>
     </Directory>
-    
-    <!-- Main feature installs Airshipper and shortcut -->
-    <Feature Id='MainProgram' Title='Airshipper' Description='Installs Airshipper.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
-      <ComponentRef Id='airshipper.exe'/>
+
+    <!-- Main feature installs Xindeler Updater and shortcut -->
+    <Feature Id='MainProgram' Title='Xindeler Updater' Description='Installs Xindeler Updater.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
+      <ComponentRef Id='XindelerUpdaterExe'/>
       <ComponentRef Id='ApplicationShortcut'/>
-      
+
       <!-- If choosen add to PATH for easier access over terminal -->
       <Feature Id='Environment' Title='PATH Environment Variable' Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.' Level='1' Absent='allow'>
         <ComponentRef Id='Path'/>
@@ -109,37 +109,37 @@
     </Feature>
 
     <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
-    
+
     <!-- set product icon -->
-    <Icon Id='ProductICO' SourceFile='client/wix/Veloren.ico'/>
+    <Icon Id='ProductICO' SourceFile='client/wix/Xindeler.ico'/>
     <Property Id='ARPPRODUCTICON' Value='ProductICO' />
-    <Property Id='ARPHELPLINK' Value='veloren.net'/>
-	
-	  <!-- Use this property with silent install to start airshipper -->
+    <Property Id='ARPHELPLINK' Value='xindeler.com'/>
+
+	  <!-- Use this property with silent install to start Xindeler Updater -->
 	  <Property Id="AUTOSTART" Value ="0" />
 
     <!-- Customize UI -->
     <UI>
       <!-- Skip license Dialog via customized FeatureTree UI -->
       <UIRef Id='WixUI_FeatureTreeNoLicense'/>
-      <!-- Allow to start Airshipper after install -->
+      <!-- Allow to start Xindeler Updater after install -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
       <UIRef Id="WixUI_Common" />
     </UI>
-    
-    <WixVariable Id='WixUIExclamationIco' Value='client/wix/Veloren.ico'/>
+
+    <WixVariable Id='WixUIExclamationIco' Value='client/wix/Xindeler.ico'/>
     <WixVariable Id='WixUIDialogBmp' Value='client/wix/Dialog.bmp'/>
     <WixVariable Id='WixUIBannerBmp' Value='client/wix/Banner.bmp'/>
-    <WixVariable Id='WixUIInfoIco' Value='client/wix/Veloren.ico'/>
-	
-	  <!-- Start airshipper incase it was a slient update -->
+    <WixVariable Id='WixUIInfoIco' Value='client/wix/Xindeler.ico'/>
+
+	  <!-- Start Xindeler Updater in case it was a silent update -->
 	  <InstallExecuteSequence>
      <Custom Action='LaunchApplication' After='InstallFinalize'>AUTOSTART = 1</Custom>
     </InstallExecuteSequence>
 
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Airshipper" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Xindeler Updater" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <Property Id="WixShellExecTarget" Value="[#airshipper.exe]" />
+    <Property Id="WixShellExecTarget" Value="[#XindelerUpdaterExe]" />
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
   </Product>
 </Wix>

@@ -49,7 +49,7 @@ impl Default for Profile {
         Profile::new(
             DEFAULT_PROFILE_NAME.to_owned(),
             Server::Production,
-            Channel("weekly".to_owned()),
+            Channel("release".to_owned()),
         )
     }
 }
@@ -151,11 +151,9 @@ pub async fn query_wgpu_devices(process_path: &Path) -> Vec<WgpuDevice> {
 )]
 pub enum Server {
     Production,
-    Staging,
-    Test,
 }
 
-pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::Test];
+pub static SERVERS: &[Server] = &[Server::Production];
 
 #[derive(
     Debug,
@@ -181,9 +179,7 @@ pub static LOG_LEVELS: &[LogLevel] =
 impl Server {
     pub fn url(&self) -> &str {
         match self {
-            Server::Production => "https://download.xindeler.com",
-            Server::Staging => "https://download.staging.xindeler.com",
-            Server::Test => "https://download.test.xindeler.com",
+            Server::Production => "https://downloads.xindeler.com",
         }
     }
 }
@@ -267,7 +263,7 @@ impl Profile {
     }
 
     /// Returns path to voxygen binary.
-    /// e.g. <base>/profiles/default/veloren-voxygen.exe
+    /// e.g. <base>/profiles/default/xindeler-voxygen.exe
     pub fn voxygen_path(&self) -> PathBuf {
         self.directory().join(consts::VOXYGEN_FILE)
     }
@@ -281,27 +277,31 @@ impl Profile {
     /// Returns the download url for this profile
     pub fn download_url(&self) -> String {
         format!(
-            "{}/latest/{}/{}/{}",
+            "{}/updater/latest/{}/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
-            self.channel
+            // Channel::Display capitalizes the first letter for UI presentation
+            // ("release" -> "Release" in the settings dropdown) - the server only
+            // publishes the raw lowercase channel name as a URL path segment, so this
+            // must bypass Display and use the underlying string directly.
+            self.channel.0
         )
     }
 
     pub(crate) fn version_url(&self) -> String {
         format!(
-            "{}/version/{}/{}/{}",
+            "{}/updater/version/{}/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
-            self.channel
+            self.channel.0
         )
     }
 
     pub(crate) fn channel_url(&self) -> String {
         format!(
-            "{}/channels/{}/{}",
+            "{}/updater/channels/{}/{}",
             self.server.url(),
             std::env::consts::OS,
             std::env::consts::ARCH,
@@ -309,7 +309,7 @@ impl Profile {
     }
 
     pub(crate) fn api_version_url(&self) -> String {
-        format!("{}/api/version", self.server.url(),)
+        format!("{}/updater/api/version", self.server.url(),)
     }
 
     pub(crate) fn announcement_url(&self) -> String {

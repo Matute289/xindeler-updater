@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Xindeler
+Type=Application
+NoDisplay=true
+Exec=xindeler-updater
+Icon=com.xindeler.updater
+# Must stay in lockstep with the engine's winit with_name(...) call
+# (voxygen/src/window.rs), which sets both X11's WM_CLASS and Wayland's app-id. Updated
+# 2026-09-09 to "com.xindeler.xindeler" per NH-17 (docs/design/backlog/new-horizon.md,
+# xindeler-new-horizon repo), landed in xindeler-new-horizon#279. If the engine's value
+# ever changes again, this line needs to change in the same PR or taskbar icon matching
+# breaks.
+StartupWMClass=com.xindeler.xindeler

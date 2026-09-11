@@ -10,8 +10,8 @@ RUN apt-get update \
 
 WORKDIR /opt
 
-COPY ./airshipper-server /opt/airshipper-server
+COPY ./xindeler-updater-server /opt/xindeler-updater-server
 
 ENV RUST_BACKTRACE=full
 EXPOSE 8000
-CMD [ "/opt/airshipper-server" ]
+CMD [ "/opt/xindeler-updater-server" ]
