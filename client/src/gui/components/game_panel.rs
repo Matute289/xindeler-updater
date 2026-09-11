@@ -103,6 +103,10 @@ pub struct GamePanelComponent {
     /// installed - see the "why does it say v0.26.0 when v0.26.1 is out" confusion
     /// this fixes.
     available_version: Option<String>,
+    /// Set when the current download was auto-started (`Profile::auto_update_game`, no
+    /// prompt shown) - consulted once at `Progress::Successful` to decide whether to
+    /// show a "game updated successfully" toast, then cleared.
+    auto_triggered_download: bool,
 }
 
 impl std::fmt::Debug for GamePanelState {
@@ -130,6 +134,7 @@ impl Default for GamePanelComponent {
             download_progress: None,
             selected_server_browser_address: None,
             available_version: None,
+            auto_triggered_download: false,
         }
     }
 }
@@ -369,12 +374,22 @@ impl GamePanelComponent {
                     },
                     Some(Progress::Successful(profile)) => {
                         let profile = profile.clone();
+                        let version = profile.version.clone().unwrap_or_default();
+                        let mut commands = vec![Command::perform(
+                            async move { Action::UpdateProfile(profile) },
+                            DefaultViewMessage::Action,
+                        )];
+                        if self.auto_triggered_download {
+                            self.auto_triggered_download = false;
+                            commands.push(Command::perform(async {}, move |_| {
+                                DefaultViewMessage::ShowToast(format!(
+                                    "Game updated to v{version}"
+                                ))
+                            }));
+                        }
                         (
                             Some(GamePanelState::ReadyToPlay),
-                            Some(Command::perform(
-                                async { Action::UpdateProfile(profile) },
-                                DefaultViewMessage::Action,
-                            )),
+                            Some(Command::batch(commands)),
                         )
                     },
                     Some(Progress::Offline) => (
@@ -407,29 +422,50 @@ impl GamePanelComponent {
                     Some(Progress::ReadyToSync { version }) => {
                         tracing::debug!(?version, "Need to confirm the update");
                         self.available_version = Some(version.clone());
-                        (
-                            if let GamePanelState::Updating { astate, .. } = &self.state {
-                                if active_profile.installed() {
-                                    // Already playable on the old version - ask
-                                    // before disrupting anything, rather than just
-                                    // swapping the Launch button for a Download one.
+                        match &self.state {
+                            GamePanelState::Updating { astate, .. }
+                                if active_profile.auto_update_game =>
+                            {
+                                // Skip the prompt entirely and start downloading -
+                                // Profile::auto_update_game opted into this.
+                                self.auto_triggered_download = true;
+                                let state = {
+                                    let mut l = astate.blocking_lock();
+                                    l.take().expect("impossible, should always be filled")
+                                };
+                                Self::trigger_next_state(
+                                    state,
+                                    astate.clone(),
+                                    DownloadButtonState::InProgress,
+                                )
+                            },
+                            GamePanelState::Updating { astate, .. }
+                                if active_profile.installed() =>
+                            {
+                                // Already playable on the old version - ask before
+                                // disrupting anything, rather than just swapping the
+                                // Launch button for a Download one.
+                                (
                                     Some(GamePanelState::UpdatePrompt {
                                         astate: astate.clone(),
                                         version: version.clone(),
-                                    })
-                                } else {
-                                    // Nothing installed yet, there's no "play the old
-                                    // version" option to offer - just ask to download.
+                                    }),
+                                    None,
+                                )
+                            },
+                            GamePanelState::Updating { astate, .. } => {
+                                // Nothing installed yet, there's no "play the old
+                                // version" option to offer - just ask to download.
+                                (
                                     Some(GamePanelState::Updating {
                                         astate: astate.clone(),
                                         btnstate: DownloadButtonState::WaitForConfirm,
-                                    })
-                                }
-                            } else {
-                                None
+                                    }),
+                                    None,
+                                )
                             },
-                            None,
-                        )
+                            _ => (None, None),
+                        }
                     },
                     None => (None, None),
                 };

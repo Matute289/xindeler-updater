@@ -2,6 +2,7 @@ use iced::{Color, application, application::Appearance};
 use lazy_static::lazy_static;
 
 pub mod button;
+pub mod checkbox;
 pub mod container;
 pub mod menu;
 pub mod pick_list;

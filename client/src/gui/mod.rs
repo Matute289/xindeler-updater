@@ -22,10 +22,8 @@ use crate::{
     profiles::Profile,
 };
 use iced::{Application, Command, Settings, Size, Subscription};
-#[cfg(windows)]
-use views::update::{UpdateView, UpdateViewMessage};
 use views::{
-    Action, View,
+    Action,
     default::{DefaultView, DefaultViewMessage},
 };
 
@@ -36,16 +34,8 @@ pub fn run(cmd: CmdLine) -> Result<()> {
 
 #[derive(Debug, Clone)]
 pub struct XindelerUpdater {
-    view: View,
-
     pub default_view: DefaultView,
-    #[cfg(windows)]
-    update_view: UpdateView,
     pub active_profile: Profile,
-
-    // XindelerUpdater update
-    #[cfg(windows)]
-    update: Option<self_update::update::Release>,
 }
 
 impl XindelerUpdater {
@@ -53,13 +43,8 @@ impl XindelerUpdater {
 
     pub fn new(active_profile: Profile) -> Self {
         Self {
-            view: View::default(),
             default_view: DefaultView::default(),
-            #[cfg(windows)]
-            update_view: UpdateView::default(),
             active_profile,
-            #[cfg(windows)]
-            update: None,
         }
     }
 }
@@ -73,8 +58,6 @@ pub enum Message {
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
-    #[cfg(windows)]
-    UpdateViewMessage(UpdateViewMessage),
 }
 
 impl Application for XindelerUpdater {
@@ -122,26 +105,15 @@ impl Application for XindelerUpdater {
 
             // Views
             Message::DefaultViewMessage(msg) => {
-                if let DefaultViewMessage::Action(action) = &msg {
-                    match action {
-                        Action::UpdateProfile(profile) => {
-                            self.active_profile = profile.clone();
-                            self.active_profile.reload_wgpu_backends();
-                            self.active_profile.reload_wgpu_devices();
+                if let DefaultViewMessage::Action(Action::UpdateProfile(profile)) = &msg {
+                    self.active_profile = profile.clone();
+                    self.active_profile.reload_wgpu_backends();
+                    self.active_profile.reload_wgpu_devices();
 
-                            return Command::perform(
-                                Profile::save(self.active_profile.clone()),
-                                Message::Saved,
-                            );
-                        },
-                        #[cfg(windows)] // for now
-                        Action::SwitchView(view) => self.view = *view,
-                        #[cfg(windows)]
-                        Action::LauncherUpdate(release) => {
-                            self.update = Some(release.clone());
-                            self.view = View::Update
-                        },
-                    }
+                    return Command::perform(
+                        Profile::save(self.active_profile.clone()),
+                        Message::Saved,
+                    );
                 }
 
                 return self
@@ -149,44 +121,15 @@ impl Application for XindelerUpdater {
                     .update(msg, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
-            #[cfg(windows)]
-            Message::UpdateViewMessage(msg) => {
-                if let UpdateViewMessage::Action(action) = &msg {
-                    match action {
-                        Action::UpdateProfile(profile) => {
-                            self.active_profile = profile.clone();
-                            return Command::perform(
-                                Profile::save(self.active_profile.clone()),
-                                Message::Saved,
-                            );
-                        },
-                        Action::SwitchView(view) => self.view = *view,
-                        Action::LauncherUpdate(_) => {},
-                    }
-                }
-
-                return self
-                    .update_view
-                    .update(msg, &self.update)
-                    .map(Message::UpdateViewMessage);
-            },
         }
 
         Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let Self {
-            view, default_view, ..
-        } = self;
-
-        match view {
-            View::Default => default_view
-                .view(&self.active_profile)
-                .map(Message::DefaultViewMessage),
-            #[cfg(windows)]
-            View::Update => self.update_view.view().map(Message::UpdateViewMessage),
-        }
+        self.default_view
+            .view(&self.active_profile)
+            .map(Message::DefaultViewMessage)
     }
 
     fn theme(&self) -> Self::Theme {
@@ -194,14 +137,9 @@ impl Application for XindelerUpdater {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        match self.view {
-            View::Default => self
-                .default_view
-                .subscription()
-                .map(Message::DefaultViewMessage),
-            #[cfg(windows)]
-            View::Update => iced::Subscription::none(),
-        }
+        self.default_view
+            .subscription()
+            .map(Message::DefaultViewMessage)
     }
 }
 

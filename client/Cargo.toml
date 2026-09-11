@@ -99,6 +99,21 @@ dirs = { package = "dirs-next", version = "2.0.0" }
 rand = "0.9"
 chrono = { workspace = true }
 country-parser = "0.1.1"
+# Launcher self-update (client/src/launcher_update.rs): archive-zip for macOS's .zip
+# release, archive-tar/compression-flate2 for Linux's .tar.gz release. Windows ships a
+# plain .exe installer (no archive), applied via windows.rs instead.
+# default-features off + "rustls" on: self_update's default pulls in reqwest's
+# native-tls (openssl-sys), which needs libssl-dev to build - our own reqwest is
+# already rustls-only (see reqwest below) specifically to avoid that system dependency
+# in CI, so this stays consistent with it.
+self_update = { version = "0.42", default-features = false, features = [
+    "archive-zip",
+    "archive-tar",
+    "compression-flate2",
+    "rustls",
+] }
+sha2 = "0.10"
+hex = "0.4"
 
 # bundle all the things!
 openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
@@ -110,7 +125,9 @@ windows-sys = { version = "0.60", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_Threading",
 ] }
-self_update = { version = "0.42", features = ["archive-zip"] }
 
 [build-dependencies]
 winresource = "0.1.15"
+
+[dev-dependencies]
+tempfile = "3"

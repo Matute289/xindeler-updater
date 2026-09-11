@@ -21,6 +21,7 @@ pub enum ContainerStyle {
     ExtraBrowser,
     ModalBackdrop,
     ModalDialog,
+    Toast,
 }
 
 impl container::StyleSheet for XindelerUpdaterTheme {
@@ -39,6 +40,7 @@ impl container::StyleSheet for XindelerUpdaterTheme {
             ContainerStyle::ExtraBrowser => extra_browser_container_style(),
             ContainerStyle::ModalBackdrop => modal_backdrop_container_style(),
             ContainerStyle::ModalDialog => modal_dialog_container_style(),
+            ContainerStyle::Toast => toast_container_style(),
         }
     }
 }
@@ -119,6 +121,15 @@ fn modal_dialog_container_style() -> Appearance {
             width: 1.0,
             radius: 8.0.into(),
         },
+        ..Appearance::default()
+    }
+}
+
+fn toast_container_style() -> Appearance {
+    Appearance {
+        background: Some(Background::Color(LIME_GREEN)),
+        text_color: Some(Color::WHITE),
+        border: Border::with_radius(4.0),
         ..Appearance::default()
     }
 }
