@@ -10,10 +10,11 @@ use crate::{
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
+        custom_widgets::modal_shell,
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
         style::{
-            button::{ButtonState, ButtonStyle, DownloadButtonStyle},
-            container::ContainerStyle,
+            ARCANE_500, CRIMSON_500, GOLD_500, button::ButtonStyle,
+            container::ContainerStyle, text::TextStyle,
         },
         subscriptions,
         views::Action,
@@ -25,8 +26,7 @@ use crate::{
 
 use iced::{
     Alignment, Command, Length,
-    alignment::Horizontal,
-    widget::{button, column, container, image::Handle, row, text},
+    widget::{button, column, container, image::Handle, progress_bar, row, text},
 };
 use std::time::Duration;
 
@@ -463,102 +463,94 @@ impl DefaultView {
 fn launcher_update_dialog(
     state: &LauncherUpdateState,
 ) -> Element<'static, DefaultViewMessage> {
-    let (heading, body, action): (
-        &str,
-        String,
-        Option<Element<'static, DefaultViewMessage>>,
-    ) = match state {
-        LauncherUpdateState::Prompt(update) => (
-            "Launcher update required",
-            format!(
-                "A new version of the launcher ({}) is available. You need to update \
-                 before you can play or download the game.",
-                update.version
-            ),
-            Some(
-                button(
-                    text("Update now")
-                        .font(crate::assets::POPPINS_BOLD_FONT)
-                        .size(14),
-                )
-                .style(ButtonStyle::Download(DownloadButtonStyle::Update(
-                    ButtonState::Enabled,
-                )))
-                .padding([10, 24])
-                .on_press(DefaultViewMessage::LauncherUpdateConfirm)
-                .into(),
-            ),
-        ),
-        LauncherUpdateState::Applying(update) => (
-            "Updating the launcher...",
-            format!("Downloading and installing version {}.", update.version),
-            None,
-        ),
-        LauncherUpdateState::Failed(update, reason) => (
-            "Launcher update failed",
-            format!(
-                "Couldn't update to version {}: {reason}. Check your connection and try \
-                 again.",
-                update.version
-            ),
-            Some(
-                button(
-                    text("Retry")
-                        .font(crate::assets::POPPINS_BOLD_FONT)
-                        .size(14),
-                )
-                .style(ButtonStyle::Download(DownloadButtonStyle::Update(
-                    ButtonState::Enabled,
-                )))
-                .padding([10, 24])
-                .on_press(DefaultViewMessage::LauncherUpdateConfirm)
-                .into(),
-            ),
-        ),
-    };
-
-    let mut card = column![]
-        .align_items(Alignment::Center)
-        .spacing(16)
-        .padding(24)
-        .push(
-            text(heading)
-                .font(crate::assets::POPPINS_BOLD_FONT)
-                .size(20),
-        )
-        .push(
-            text(body)
-                .size(14)
-                .horizontal_alignment(Horizontal::Center)
-                .width(Length::Fixed(340.0)),
-        );
-    if let Some(action) = action {
-        card = card.push(action);
+    fn primary_action(label: &'static str) -> Element<'static, DefaultViewMessage> {
+        button(text(label).font(crate::assets::POPPINS_BOLD_FONT).size(14))
+            .style(ButtonStyle::Primary)
+            .padding([10, 22])
+            .on_press(DefaultViewMessage::LauncherUpdateConfirm)
+            .into()
     }
 
-    container(
-        container(card)
-            .style(ContainerStyle::ModalDialog)
-            .width(Length::Fixed(380.0)),
-    )
-    .width(Length::Fill)
-    .height(Length::Fill)
-    .align_x(Horizontal::Center)
-    .align_y(iced::alignment::Vertical::Center)
-    .style(ContainerStyle::ModalBackdrop)
-    .into()
+    match state {
+        LauncherUpdateState::Prompt(update) => {
+            let body = text(
+                "The launcher needs to update before you can download or play. It only \
+                 takes a moment.",
+            )
+            .size(14)
+            .style(TextStyle::Secondary)
+            .into();
+            modal_shell(
+                GOLD_500,
+                "LAUNCHER UPDATE REQUIRED",
+                format!("Update to v{}", update.version),
+                body,
+                Some(primary_action("Update now")),
+            )
+        },
+        LauncherUpdateState::Applying(update) => {
+            let body = column![]
+                .spacing(16)
+                .push(
+                    text(format!(
+                        "Downloading and installing v{}. The launcher will restart on \
+                         its own.",
+                        update.version
+                    ))
+                    .size(14)
+                    .style(TextStyle::Secondary),
+                )
+                .push(progress_bar(0.0..=100.0, 100.0).height(Length::Fixed(6.0)))
+                .into();
+            modal_shell(
+                ARCANE_500,
+                "INSTALLING",
+                "Updating the launcher…",
+                body,
+                None,
+            )
+        },
+        LauncherUpdateState::Failed(update, reason) => {
+            let body = column![]
+                .spacing(12)
+                .push(
+                    text("Check your connection and try again.")
+                        .size(14)
+                        .style(TextStyle::Secondary),
+                )
+                .push(
+                    container(text(reason.clone()).size(12).style(TextStyle::Danger))
+                        .style(ContainerStyle::ErrorCallout)
+                        .padding([10, 12]),
+                )
+                .into();
+            modal_shell(
+                CRIMSON_500,
+                "UPDATE FAILED",
+                format!("Couldn't update to v{}", update.version),
+                body,
+                Some(primary_action("Try again")),
+            )
+        },
+    }
 }
 
 /// A brief, non-blocking "updated successfully" notice - unlike the modals above,
 /// this is just an extra row in the normal layout, not a full-window overlay.
 fn toast_banner(message: &str) -> Element<'_, DefaultViewMessage> {
     container(
-        text(message)
-            .size(12)
-            .horizontal_alignment(Horizontal::Center)
-            .width(Length::Fill),
+        row![]
+            .spacing(10)
+            .align_items(Alignment::Center)
+            .push(
+                container(text(""))
+                    .width(Length::Fixed(8.0))
+                    .height(Length::Fixed(8.0))
+                    .style(ContainerStyle::StatusDot(crate::gui::style::SUCCESS_TEXT)),
+            )
+            .push(text(message).size(13).style(TextStyle::Primary)),
     )
-    .padding(8)
+    .padding([10, 14])
     .width(Length::Fill)
     .style(ContainerStyle::Toast)
     .into()

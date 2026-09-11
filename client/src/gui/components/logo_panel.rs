@@ -22,6 +22,7 @@ impl LogoPanelComponent {
             .push(
                 container(
                     column![]
+                        .spacing(2)
                         .push(link_widget(
                             BOOK_ICON,
                             "https://book.xindeler.com/",
@@ -40,7 +41,7 @@ impl LogoPanelComponent {
                     // Donate link removed for now: Xindeler doesn't have its own
                     // donation page yet.
                 )
-                .padding([40, 0, 0, 0]),
+                .padding([32, 0, 0, 0]),
             );
 
         let container: Container<'_, DefaultViewMessage> = container(col).padding(20);
@@ -60,14 +61,19 @@ fn link_widget<'a>(
                 .push(
                     container(
                         Image::new(Handle::from_memory(image_bytes.to_vec()))
-                            .height(Length::Fixed(24.0))
-                            .width(Length::Fixed(24.0)),
+                            .height(Length::Fixed(20.0))
+                            .width(Length::Fixed(20.0)),
                     )
                     .align_y(Vertical::Center),
                 )
                 .push(
-                    container(text(link_text).size(14).shaping(Shaping::Advanced))
-                        .align_y(Vertical::Center),
+                    container(
+                        text(link_text)
+                            .font(crate::assets::POPPINS_MEDIUM_FONT)
+                            .size(13)
+                            .shaping(Shaping::Advanced),
+                    )
+                    .align_y(Vertical::Center),
                 )
                 .push(
                     container(Image::new(Handle::from_memory(
@@ -77,10 +83,12 @@ fn link_widget<'a>(
                 )
                 .spacing(10),
         )
+        .padding([8, 10])
+        .width(Length::Fill)
         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
             url.to_string(),
         )))
-        .style(ButtonStyle::Transparent),
+        .style(ButtonStyle::Ghost),
     )
     .height(Length::Shrink)
     .into()

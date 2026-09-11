@@ -2,8 +2,8 @@ use crate::{
     Result,
     assets::{
         GLOBE_ICON, KEY_ICON, PING_ERROR_ICON, PING_NONE_ICON, PING1_ICON, PING2_ICON,
-        PING3_ICON, PING4_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
-        UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
+        PING3_ICON, PING4_ICON, POPPINS_MEDIUM_FONT, STAR_ICON, UNIVERSAL_FONT,
+        UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::{OFFICIAL_SERVER_LIST, SERVER_LISTING_REQUEST_URL},
@@ -141,7 +141,7 @@ impl ServerBrowserPanelComponent {
                     .push(
                         container(
                             text("Server Browser")
-                                .style(TextStyle::Dark)
+                                .style(TextStyle::Primary)
                                 .size(16)
                                 .font(POPPINS_MEDIUM_FONT),
                         )
@@ -168,7 +168,7 @@ impl ServerBrowserPanelComponent {
                             ))
                             .padding([4, 10, 0, 10])
                             .height(Length::Fixed(20.0))
-                            .style(ButtonStyle::Browser(BrowserButtonStyle::Extra)),
+                            .style(ButtonStyle::Chip(BrowserButtonStyle::Extra)),
                         )
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
@@ -179,9 +179,9 @@ impl ServerBrowserPanelComponent {
 
         let heading_button = |button_text: &str, sort_order: Option<ServerSortOrder>| {
             let mut button = button(
-                text(button_text)
-                    .font(POPPINS_BOLD_FONT)
-                    .size(16)
+                text(button_text.to_uppercase())
+                    .font(POPPINS_MEDIUM_FONT)
+                    .size(10)
                     .vertical_alignment(Vertical::Center),
             )
             .padding(0)
@@ -302,8 +302,8 @@ impl ServerBrowserPanelComponent {
                     column_cell(
                         // Iced currently doesn't support truncating text widgets to
                         // prevent multi-line overflow so for now we truncate the server
-                        // name to a length which doesn't wrap when the XindelerUpdater window
-                        // is at its default size
+                        // name to a length which doesn't wrap when the XindelerUpdater
+                        // window is at its default size
                         &server_entry.server.name
                             [..min(server_entry.server.name.len(), 40)],
                     )
@@ -361,9 +361,9 @@ impl ServerBrowserPanelComponent {
                 .selected_index
                 .is_some_and(|selected_index| selected_index == i)
             {
-                ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected)
+                ButtonStyle::ListRow(ServerListEntryButtonState::Selected)
             } else {
-                ButtonStyle::ServerListEntry(ServerListEntryButtonState::NotSelected)
+                ButtonStyle::ListRow(ServerListEntryButtonState::NotSelected)
             };
             let select_row_button = button(container(row).padding([0, 8]))
                 .on_press(DefaultViewMessage::ServerBrowserPanel(
@@ -470,7 +470,7 @@ impl ServerBrowserPanelComponent {
                                                     .map(|u| u.origin() == discord_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                ButtonStyle::Browser(
+                                                ButtonStyle::Chip(
                                                     BrowserButtonStyle::Discord,
                                                 )
                                             },
@@ -479,7 +479,7 @@ impl ServerBrowserPanelComponent {
                                                     .map(|u| u.origin() == reddit_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                ButtonStyle::Browser(
+                                                ButtonStyle::Chip(
                                                     BrowserButtonStyle::Reddit,
                                                 )
                                             },
@@ -488,17 +488,17 @@ impl ServerBrowserPanelComponent {
                                                     .map(|u| u.origin() == youtube_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                ButtonStyle::Browser(
+                                                ButtonStyle::Chip(
                                                     BrowserButtonStyle::Youtube,
                                                 )
                                             },
-                                            "mastodon" => ButtonStyle::Browser(
+                                            "mastodon" => ButtonStyle::Chip(
                                                 BrowserButtonStyle::Mastodon,
                                             ),
-                                            "twitch" => ButtonStyle::Browser(
+                                            "twitch" => ButtonStyle::Chip(
                                                 BrowserButtonStyle::Twitch,
                                             ),
-                                            _ => ButtonStyle::Browser(
+                                            _ => ButtonStyle::Chip(
                                                 BrowserButtonStyle::Extra,
                                             ),
                                         };
@@ -541,7 +541,7 @@ impl ServerBrowserPanelComponent {
                                             ))
                                             .size(14)
                                             .font(UNIVERSAL_FONT)
-                                            .style(TextStyle::BrightOrange),
+                                            .style(TextStyle::Accent),
                                         ),
                                 )
                                 .push(text("Description: ").font(UNIVERSAL_FONT).size(14))
@@ -562,7 +562,7 @@ impl ServerBrowserPanelComponent {
                 container(
                     text("Error fetching server list")
                         .size(14)
-                        .style(TextStyle::TomatoRed),
+                        .style(TextStyle::Danger),
                 )
                 .padding(20)
                 .align_x(Horizontal::Center),

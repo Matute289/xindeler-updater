@@ -1,5 +1,6 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, CORNFLOWER_BLUE, DARK_WHITE, LIGHT_GREY, MEDIUM_GREY, NAVY_BLUE,
+    GOLD_500, INK_600, INK_700, RADIUS_MD, TEXT_MUTED, TEXT_PRIMARY, WHITE_A10,
+    XindelerUpdaterTheme,
 };
 use iced::{
     Background, Border, Color,
@@ -17,43 +18,51 @@ impl text_input::StyleSheet for XindelerUpdaterTheme {
 
     fn active(&self, _: &Self::Style) -> Appearance {
         Appearance {
-            background: Background::Color(NAVY_BLUE),
+            background: Background::Color(INK_600),
             border: Border {
-                color: DARK_WHITE,
-                width: 0.0,
-                radius: 3.0.into(),
+                color: WHITE_A10,
+                width: 1.0,
+                radius: RADIUS_MD.into(),
             },
             icon_color: Default::default(),
         }
     }
 
-    fn focused(&self, style: &Self::Style) -> Appearance {
-        self.active(style)
+    fn focused(&self, _: &Self::Style) -> Appearance {
+        Appearance {
+            background: Background::Color(INK_600),
+            border: Border {
+                color: GOLD_500,
+                width: 1.0,
+                radius: RADIUS_MD.into(),
+            },
+            icon_color: Default::default(),
+        }
     }
 
     fn placeholder_color(&self, _: &Self::Style) -> Color {
-        MEDIUM_GREY
+        TEXT_MUTED
     }
 
     fn value_color(&self, _: &Self::Style) -> Color {
-        LIGHT_GREY
+        TEXT_PRIMARY
     }
 
     fn selection_color(&self, _: &Self::Style) -> Color {
-        CORNFLOWER_BLUE
+        Color::from_rgba(GOLD_500.r, GOLD_500.g, GOLD_500.b, 0.35)
     }
 
     fn disabled_color(&self, _style: &Self::Style) -> Color {
-        MEDIUM_GREY
+        TEXT_MUTED
     }
 
     fn disabled(&self, _style: &Self::Style) -> Appearance {
         Appearance {
-            background: Background::Color(MEDIUM_GREY),
+            background: Background::Color(INK_700),
             border: Border {
-                color: DARK_WHITE,
-                width: 0.0,
-                radius: 3.0.into(),
+                color: WHITE_A10,
+                width: 1.0,
+                radius: RADIUS_MD.into(),
             },
             icon_color: Default::default(),
         }

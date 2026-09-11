@@ -1,20 +1,21 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, BRIGHT_ORANGE, DARK_WHITE, LIGHT_GREY, LILAC, TOMATO_RED,
+    DANGER_TEXT, GOLD_400, SUCCESS_TEXT, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY,
+    XindelerUpdaterTheme,
 };
-use iced::{
-    Color,
-    widget::{text, text::Appearance},
-};
+use iced::widget::{text, text::Appearance};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub enum TextStyle {
+    /// Inherits whatever colour the surrounding widget sets (button label, container
+    /// text, ...) rather than forcing white - see docs/design/ui-refresh-spec.md §2.7.
     #[default]
     Normal,
-    Dark,
-    LightGrey,
-    BrightOrange,
-    TomatoRed,
-    Lilac,
+    Primary,
+    Secondary,
+    Muted,
+    Accent,
+    Danger,
+    Success,
 }
 
 impl text::StyleSheet for XindelerUpdaterTheme {
@@ -22,16 +23,17 @@ impl text::StyleSheet for XindelerUpdaterTheme {
 
     fn appearance(&self, style: Self::Style) -> Appearance {
         match style {
-            TextStyle::Normal => text_appearance(Color::WHITE),
-            TextStyle::Dark => text_appearance(DARK_WHITE),
-            TextStyle::LightGrey => text_appearance(LIGHT_GREY),
-            TextStyle::BrightOrange => text_appearance(BRIGHT_ORANGE),
-            TextStyle::TomatoRed => text_appearance(TOMATO_RED),
-            TextStyle::Lilac => text_appearance(LILAC),
+            TextStyle::Normal => Appearance { color: None },
+            TextStyle::Primary => text_appearance(TEXT_PRIMARY),
+            TextStyle::Secondary => text_appearance(TEXT_SECONDARY),
+            TextStyle::Muted => text_appearance(TEXT_MUTED),
+            TextStyle::Accent => text_appearance(GOLD_400),
+            TextStyle::Danger => text_appearance(DANGER_TEXT),
+            TextStyle::Success => text_appearance(SUCCESS_TEXT),
         }
     }
 }
 
-fn text_appearance(color: Color) -> Appearance {
+fn text_appearance(color: iced::Color) -> Appearance {
     Appearance { color: Some(color) }
 }

@@ -1,10 +1,7 @@
-use crate::gui::style::XindelerUpdaterTheme;
-use iced::{
-    Color,
-    widget::{
-        rule,
-        rule::{Appearance, FillMode},
-    },
+use crate::gui::style::{WHITE_A10, XindelerUpdaterTheme};
+use iced::widget::{
+    rule,
+    rule::{Appearance, FillMode},
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -26,7 +23,7 @@ impl rule::StyleSheet for XindelerUpdaterTheme {
 fn default_rule_style() -> Appearance {
     Appearance {
         width: 1,
-        color: Color::WHITE,
+        color: WHITE_A10,
         radius: 0.0.into(),
         fill_mode: FillMode::Full,
     }

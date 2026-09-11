@@ -197,14 +197,13 @@ impl SettingsPanelComponent {
         active_profile: &'a Profile,
     ) -> Element<'a, DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
-        const FONT_SIZE: u16 = 12;
+        const FONT_SIZE: u16 = 13;
 
         let graphics_device = column![]
             .spacing(5)
-            .push(
-                container(text("GRAPHICS DEVICE").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text("GRAPHICS DEVICE").size(10).style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -221,7 +220,7 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text(
                         "The graphics device that the game will use. \nLeave on Auto \
                          unless you are experiencing issues",
@@ -236,10 +235,9 @@ impl SettingsPanelComponent {
 
         let graphics_mode = column![]
             .spacing(5)
-            .push(
-                container(text("GRAPHICS MODE").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text("GRAPHICS MODE").size(10).style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -256,7 +254,7 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text(
                         "The rendering backend that the game will use.\nLeave on Auto \
                          unless you are experiencing issues",
@@ -274,10 +272,9 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(text("LOG LEVEL").size(10).style(TextStyle::LightGrey))
-                            .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text("LOG LEVEL").size(10).style(TextStyle::Muted),
+                    ))
                     .push(
                         container(
                             button(
@@ -311,7 +308,7 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text(
                         "Changes the amount of information that the game outputs to its \
                          log file",
@@ -326,10 +323,7 @@ impl SettingsPanelComponent {
 
         let server_picker = column![]
             .spacing(5)
-            .push(
-                container(text("SERVER").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(text("SERVER").size(10).style(TextStyle::Muted)))
             .push(
                 tooltip(
                     container(
@@ -342,7 +336,7 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text("The download server used for game downloads").size(14),
                     Position::Bottom,
                 )
@@ -359,12 +353,9 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(
-                            text("ASSETS OVERRIDE").size(10).style(TextStyle::LightGrey),
-                        )
-                        .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text("ASSETS OVERRIDE").size(10).style(TextStyle::Muted),
+                    ))
                     .push(help_link_button(help_link)),
             )
             .push(
@@ -399,7 +390,7 @@ impl SettingsPanelComponent {
                         .spacing(5)
                         .align_items(Alignment::Center),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text("Folder where you can put modified assets for testing or fun!")
                         .size(14),
                     Position::Bottom,
@@ -419,14 +410,11 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(
-                            text("ENVIRONMENT VARIABLES")
-                                .size(10)
-                                .style(TextStyle::LightGrey),
-                        )
-                        .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text("ENVIRONMENT VARIABLES")
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
                     .push(help_link_button(help_link)),
             )
             .push(
@@ -441,7 +429,7 @@ impl SettingsPanelComponent {
                             .padding(PICK_LIST_PADDING)
                             .size(FONT_SIZE),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text("Environment variables set when running Voxygen").size(14),
                     Position::Bottom,
                 )
@@ -452,10 +440,7 @@ impl SettingsPanelComponent {
 
         let channel_picker = column![]
             .spacing(5)
-            .push(
-                container(text("CHANNEL").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(text("CHANNEL").size(10).style(TextStyle::Muted)))
             .push(
                 tooltip(
                     container(
@@ -472,7 +457,7 @@ impl SettingsPanelComponent {
                         .text_size(FONT_SIZE)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Fixed(30.0)),
+                    .height(Length::Fixed(32.0)),
                     text("The download channel used for game downloads").size(14),
                     Position::Bottom,
                 )
@@ -481,73 +466,94 @@ impl SettingsPanelComponent {
             )
             .width(Length::FillPortion(1));
 
-        let first_row = container(
-            row![]
-                .spacing(10)
-                .align_items(Alignment::End)
-                .push(graphics_device),
-        );
-
-        let second_row = container(
-            row![]
-                .spacing(10)
-                .align_items(Alignment::End)
-                .push(graphics_mode)
-                .push(log_level)
-                .push(server_picker),
-        );
-
-        let third_row = container(row![].spacing(10).push(env_vars).push(channel_picker));
-
-        let fourth_row =
-            container(row![].align_items(Alignment::End).push(assets_override));
-
-        let auto_update = column![]
-            .spacing(5)
+        let graphics_section = column![]
+            .spacing(12)
+            .push(section_label("Graphics"))
+            .push(row![].push(graphics_device))
             .push(
-                checkbox("Auto-update game", active_profile.auto_update_game)
-                    .style(CheckboxStyle::Default)
-                    .text_size(FONT_SIZE)
-                    .on_toggle(|enabled| {
-                        DefaultViewMessage::SettingsPanel(
-                            SettingsPanelMessage::AutoUpdateGameToggled(enabled),
-                        )
-                    }),
-            )
-            .push(
-                checkbox("Auto-update launcher", active_profile.auto_update_launcher)
-                    .style(CheckboxStyle::Default)
-                    .text_size(FONT_SIZE)
-                    .on_toggle(|enabled| {
-                        DefaultViewMessage::SettingsPanel(
-                            SettingsPanelMessage::AutoUpdateLauncherToggled(enabled),
-                        )
-                    }),
-            )
-            .push(
-                text(
-                    "When on, a new version downloads and installs automatically - no \
-                     confirmation prompt, just a quick notice once it's done.",
-                )
-                .size(10)
-                .style(TextStyle::LightGrey),
+                row![]
+                    .spacing(12)
+                    .align_items(Alignment::End)
+                    .push(graphics_mode)
+                    .push(log_level),
             );
 
-        let fifth_row = container(row![].push(auto_update));
+        let game_section = column![]
+            .spacing(12)
+            .push(section_label("Game"))
+            .push(
+                row![]
+                    .spacing(12)
+                    .align_items(Alignment::End)
+                    .push(server_picker)
+                    .push(channel_picker),
+            )
+            .push(row![].align_items(Alignment::End).push(assets_override));
+
+        let advanced_section = column![]
+            .spacing(12)
+            .push(section_label("Advanced"))
+            .push(row![].push(env_vars));
+
+        let auto_update_card = container(
+            column![]
+                .spacing(8)
+                .push(
+                    checkbox("Auto-update game", active_profile.auto_update_game)
+                        .style(CheckboxStyle::Default)
+                        .size(18)
+                        .spacing(10)
+                        .text_size(FONT_SIZE)
+                        .on_toggle(|enabled| {
+                            DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::AutoUpdateGameToggled(enabled),
+                            )
+                        }),
+                )
+                .push(
+                    checkbox("Auto-update launcher", active_profile.auto_update_launcher)
+                        .style(CheckboxStyle::Default)
+                        .size(18)
+                        .spacing(10)
+                        .text_size(FONT_SIZE)
+                        .on_toggle(|enabled| {
+                            DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::AutoUpdateLauncherToggled(enabled),
+                            )
+                        }),
+                )
+                .push(
+                    text(
+                        "When on, a new version downloads and installs automatically - \
+                         no confirmation prompt, just a quick notice once it's done.",
+                    )
+                    .size(11)
+                    .style(TextStyle::Muted),
+                ),
+        )
+        .style(ContainerStyle::Card)
+        .padding([12, 14])
+        .width(Length::Fill);
 
         let col = column![]
-            .spacing(10)
-            .push(first_row)
-            .push(second_row)
-            .push(third_row)
-            .push(fourth_row)
-            .push(fifth_row);
+            .spacing(20)
+            .push(graphics_section)
+            .push(game_section)
+            .push(advanced_section)
+            .push(auto_update_card);
 
         column![]
             .push(heading_with_rule("Settings"))
-            .push(container(col).padding([40, 10]).height(Length::Shrink))
+            .push(container(col).padding([16, 20]).height(Length::Shrink))
             .into()
     }
+}
+
+fn section_label<'a>(label: &'a str) -> Element<'a, DefaultViewMessage> {
+    text(label.to_uppercase())
+        .size(10)
+        .style(TextStyle::Muted)
+        .into()
 }
 
 fn help_link_button(url: String) -> Element<'static, DefaultViewMessage> {
