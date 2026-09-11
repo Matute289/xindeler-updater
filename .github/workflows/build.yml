@@ -1,0 +1,221 @@
+name: Build & publish updater
+
+# Builds xindeler-updater for every supported target and publishes the packages to a
+# GitHub Release. Runs ONLY on a `v*` tag on main (a real release) - never on a plain
+# merge to development, so every merge into development/main doesn't spend build minutes
+# packaging installers nobody asked for yet.
+#
+# Target matrix mirrors xindeler-new-horizon's own platform list (see that repo's
+# latest.json): linux x86_64/aarch64, macos x86_64/aarch64, windows x86_64. No windows
+# arm64 - consts.rs's own SERVER_CLI_FILE constant for that target is commented out,
+# same reasoning applies here.
+#
+# Windows installer: NSIS only (client/nsis/installer.nsi) - Matías's call, WiX
+# (client/wix/) stays in the repo but isn't built by this workflow.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # needed to create the GitHub Release and upload assets
+
+env:
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  validate:
+    name: Validate this is a real version tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse to build/publish from anything but a v* tag
+        # workflow_dispatch can be run against any branch, not just a tag - without
+        # this check, doing that would set VERSION to the branch name (e.g.
+        # "development") and the publish job would happily create a bogus GitHub
+        # Release under that name. Fail fast before spending any build minutes.
+        run: |
+          if [[ "${{ github.ref_type }}" != "tag" || ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::build.yml must run against a v* tag (got ref_type=${{ github.ref_type }}, VERSION=$VERSION). Refusing to build/publish from a branch."
+            exit 1
+          fi
+          echo "OK: publishing $VERSION"
+
+  linux:
+    name: Build Linux (${{ matrix.arch }})
+    needs: [validate]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set crate version from tag
+        run: |
+          v="${VERSION#v}"
+          sed -i -E "s/^version = \".*\"/version = \"$v\"/" client/Cargo.toml
+
+      - name: Install system dependencies
+        # iced/wgpu/winit windowing + input libs. rfd uses the xdg-desktop-portal
+        # backend by default (no gtk3 feature enabled in client/Cargo.toml), so no
+        # GTK dev packages needed. No libssl-dev either - reqwest is configured with
+        # rustls-tls, not the system OpenSSL.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev \
+            libxcursor-dev libgl1-mesa-dev libegl1-mesa-dev pkg-config
+
+      - name: Install pinned Rust toolchain
+        run: rustup show # reads ./rust-toolchain, installs it if missing
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: linux-${{ matrix.arch }}
+
+      - name: Build
+        run: cargo build --release -p xindeler-updater
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          tar -C target/release -czf "dist/xindeler-updater-linux-${{ matrix.arch }}.tar.gz" xindeler-updater
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*
+          retention-days: 7
+
+  macos:
+    name: Build macOS (${{ matrix.arch }})
+    needs: [validate]
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: aarch64
+            target: aarch64-apple-darwin
+          - arch: x86_64
+            target: x86_64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set crate version from tag
+        run: |
+          v="${VERSION#v}"
+          sed -i '' -E "s/^version = \".*\"/version = \"$v\"/" client/Cargo.toml
+
+      - name: Install pinned Rust toolchain
+        run: rustup show
+
+      - name: Add cross-compilation target
+        run: rustup target add ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: macos-${{ matrix.arch }}
+
+      - name: Build
+        run: cargo build --release -p xindeler-updater --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          tar -C "target/${{ matrix.target }}/release" -czf "dist/xindeler-updater-macos-${{ matrix.arch }}.tar.gz" xindeler-updater
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/*
+          retention-days: 7
+
+  windows:
+    name: Build Windows (x86_64)
+    needs: [validate]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set crate version from tag
+        shell: bash
+        run: |
+          v="${VERSION#v}"
+          sed -i -E "s/^version = \".*\"/version = \"$v\"/" client/Cargo.toml
+
+      - name: Install pinned Rust toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows-x86_64
+
+      - name: Build
+        # bundled = openssl-sys/vendored - client/Cargo.toml's own comment says this
+        # feature exists specifically to bundle SSL in CI on Windows.
+        run: cargo build --release -p xindeler-updater --features bundled
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Stage binary for the installer script
+        # installer.nsi's File command reads "..\..\xindeler-updater.exe" (two levels
+        # up from client/nsis/, i.e. the repo root) - see client/nsis/installer.nsi.
+        shell: bash
+        run: cp target/release/xindeler-updater.exe xindeler-updater.exe
+
+      - name: Set installer version
+        shell: bash
+        run: bash client/nsis/update_installer_version.sh
+
+      - name: Build installer
+        shell: bash
+        # choco's nsis package puts makensis on PATH; installer.nsi's own File/OutFile
+        # paths are relative to this working directory (see the "Stage binary" step).
+        run: |
+          cd client/nsis
+          makensis installer.nsi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp client/nsis/xindeler-updater-installer.exe dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: dist/*
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$VERSION" dist/* \
+            --repo "${{ github.repository }}" \
+            --title "$VERSION" \
+            --generate-notes
