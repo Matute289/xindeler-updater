@@ -352,7 +352,7 @@ impl DefaultView {
             },
 
             DefaultViewMessage::LauncherUpdateFound(Some(update)) => {
-                if active_profile.auto_update {
+                if active_profile.auto_update_launcher {
                     return self.apply_launcher_update(update, active_profile);
                 }
                 self.launcher_update = Some(LauncherUpdateState::Prompt(update));

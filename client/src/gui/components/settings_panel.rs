@@ -43,7 +43,8 @@ pub enum SettingsPanelMessage {
     AssetsOverridePicked(Option<PathBuf>),
     OpenLogsPressed,
     ChannelsLoaded(Result<Channels>),
-    AutoUpdateToggled(bool),
+    AutoUpdateGameToggled(bool),
+    AutoUpdateLauncherToggled(bool),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -164,9 +165,17 @@ impl SettingsPanelComponent {
                 // user closed the menu, chill out
                 None
             },
-            SettingsPanelMessage::AutoUpdateToggled(enabled) => {
+            SettingsPanelMessage::AutoUpdateGameToggled(enabled) => {
                 let mut profile = active_profile.clone();
-                profile.auto_update = enabled;
+                profile.auto_update_game = enabled;
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
+            },
+            SettingsPanelMessage::AutoUpdateLauncherToggled(enabled) => {
+                let mut profile = active_profile.clone();
+                profile.auto_update_launcher = enabled;
                 Some(Command::perform(
                     async { Action::UpdateProfile(profile) },
                     DefaultViewMessage::Action,
@@ -496,20 +505,29 @@ impl SettingsPanelComponent {
         let auto_update = column![]
             .spacing(5)
             .push(
-                checkbox("Auto-update game and launcher", active_profile.auto_update)
+                checkbox("Auto-update game", active_profile.auto_update_game)
                     .style(CheckboxStyle::Default)
                     .text_size(FONT_SIZE)
                     .on_toggle(|enabled| {
                         DefaultViewMessage::SettingsPanel(
-                            SettingsPanelMessage::AutoUpdateToggled(enabled),
+                            SettingsPanelMessage::AutoUpdateGameToggled(enabled),
+                        )
+                    }),
+            )
+            .push(
+                checkbox("Auto-update launcher", active_profile.auto_update_launcher)
+                    .style(CheckboxStyle::Default)
+                    .text_size(FONT_SIZE)
+                    .on_toggle(|enabled| {
+                        DefaultViewMessage::SettingsPanel(
+                            SettingsPanelMessage::AutoUpdateLauncherToggled(enabled),
                         )
                     }),
             )
             .push(
                 text(
-                    "When on, new versions of the game and the launcher download and \
-                     install automatically - no confirmation prompt, just a quick \
-                     notice once it's done.",
+                    "When on, a new version downloads and installs automatically - no \
+                     confirmation prompt, just a quick notice once it's done.",
                 )
                 .size(10)
                 .style(TextStyle::LightGrey),

@@ -103,7 +103,7 @@ pub struct GamePanelComponent {
     /// installed - see the "why does it say v0.26.0 when v0.26.1 is out" confusion
     /// this fixes.
     available_version: Option<String>,
-    /// Set when the current download was auto-started (`Profile::auto_update`, no
+    /// Set when the current download was auto-started (`Profile::auto_update_game`, no
     /// prompt shown) - consulted once at `Progress::Successful` to decide whether to
     /// show a "game updated successfully" toast, then cleared.
     auto_triggered_download: bool,
@@ -366,10 +366,10 @@ impl GamePanelComponent {
                         self.available_version = Some(version.clone());
                         match &self.state {
                             GamePanelState::Updating { astate, .. }
-                                if active_profile.auto_update =>
+                                if active_profile.auto_update_game =>
                             {
                                 // Skip the prompt entirely and start downloading -
-                                // Profile::auto_update opted into this.
+                                // Profile::auto_update_game opted into this.
                                 self.auto_triggered_download = true;
                                 let state = {
                                     let mut l = astate.blocking_lock();
