@@ -47,12 +47,7 @@ where
         Size::new(Length::Fill, Length::Fill)
     }
 
-    fn layout(
-        &self,
-        _tree: &mut Tree,
-        _renderer: &Renderer,
-        limits: &Limits,
-    ) -> Node {
+    fn layout(&self, _tree: &mut Tree, _renderer: &Renderer, limits: &Limits) -> Node {
         Node::new(limits.resolve(Length::Fill, Length::Fill, Size::ZERO))
     }
 
@@ -93,10 +88,12 @@ where
     }
 }
 
-/// Wraps `foreground` so `background` is painted behind it, stretched to
-/// cover the same bounds. All interaction (clicks, tooltips, scrolling) is
-/// forwarded only to `foreground` - `background` is purely decorative.
-pub fn background_image<'a, Message, Theme, Renderer>(
+/// Stacks `foreground` on top of `background`, both filling the same bounds.
+/// All interaction (clicks, tooltips, scrolling) is forwarded only to
+/// `foreground` - `background` is rendered but never receives events, which
+/// is what makes this useful both for a decorative background photo and for
+/// a modal dialog that should block interaction with whatever's behind it.
+pub fn layered<'a, Message, Theme, Renderer>(
     background: impl Into<Element<'a, Message, Theme, Renderer>>,
     foreground: impl Into<Element<'a, Message, Theme, Renderer>>,
 ) -> Element<'a, Message, Theme, Renderer>
@@ -137,12 +134,7 @@ where
         tree::Tag::stateless()
     }
 
-    fn layout(
-        &self,
-        tree: &mut Tree,
-        renderer: &Renderer,
-        limits: &Limits,
-    ) -> Node {
+    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
         let foreground_node =
             self.foreground
                 .as_widget()
@@ -211,10 +203,7 @@ where
         renderer: &Renderer,
         operation: &mut dyn Operation<Message>,
     ) {
-        let foreground_layout = layout
-            .children()
-            .nth(1)
-            .expect("foreground layout");
+        let foreground_layout = layout.children().nth(1).expect("foreground layout");
         self.foreground.as_widget().operate(
             &mut tree.children[1],
             foreground_layout,
@@ -234,10 +223,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &iced::Rectangle,
     ) -> event::Status {
-        let foreground_layout = layout
-            .children()
-            .nth(1)
-            .expect("foreground layout");
+        let foreground_layout = layout.children().nth(1).expect("foreground layout");
         self.foreground.as_widget_mut().on_event(
             &mut tree.children[1],
             event,
@@ -258,10 +244,7 @@ where
         viewport: &iced::Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        let foreground_layout = layout
-            .children()
-            .nth(1)
-            .expect("foreground layout");
+        let foreground_layout = layout.children().nth(1).expect("foreground layout");
         self.foreground.as_widget().mouse_interaction(
             &tree.children[1],
             foreground_layout,
@@ -278,10 +261,7 @@ where
         renderer: &Renderer,
         translation: iced::Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
-        let foreground_layout = layout
-            .children()
-            .nth(1)
-            .expect("foreground layout");
+        let foreground_layout = layout.children().nth(1).expect("foreground layout");
         self.foreground.as_widget_mut().overlay(
             &mut tree.children[1],
             foreground_layout,

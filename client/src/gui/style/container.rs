@@ -1,6 +1,6 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE, DARK_WHITE,
-    LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
+    ALMOST_BLACK, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE, DARK_WHITE, LIGHT_GREY,
+    LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY, XindelerUpdaterTheme,
 };
 use iced::{
     Background, Border, Color,
@@ -19,6 +19,8 @@ pub enum ContainerStyle {
     ChangelogHeader,
     Tooltip,
     ExtraBrowser,
+    ModalBackdrop,
+    ModalDialog,
 }
 
 impl container::StyleSheet for XindelerUpdaterTheme {
@@ -35,6 +37,8 @@ impl container::StyleSheet for XindelerUpdaterTheme {
             ContainerStyle::ChangelogHeader => changelog_header_container_style(),
             ContainerStyle::Tooltip => tooltip_container_style(),
             ContainerStyle::ExtraBrowser => extra_browser_container_style(),
+            ContainerStyle::ModalBackdrop => modal_backdrop_container_style(),
+            ContainerStyle::ModalDialog => modal_dialog_container_style(),
         }
     }
 }
@@ -95,6 +99,26 @@ fn extra_browser_container_style() -> Appearance {
     Appearance {
         background: Some(Background::Color(LIME_GREEN)),
         border: Border::with_radius(25.0),
+        ..Appearance::default()
+    }
+}
+
+fn modal_backdrop_container_style() -> Appearance {
+    Appearance {
+        background: Some(Background::Color(ALMOST_BLACK)),
+        ..Appearance::default()
+    }
+}
+
+fn modal_dialog_container_style() -> Appearance {
+    Appearance {
+        background: Some(Background::Color(VERY_DARK_GREY)),
+        text_color: Some(Color::WHITE),
+        border: Border {
+            color: MEDIUM_GREY,
+            width: 1.0,
+            radius: 8.0.into(),
+        },
         ..Appearance::default()
     }
 }

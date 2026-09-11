@@ -2,12 +2,11 @@ use crate::{
     assets::BACKGROUND_IMAGES,
     channels::Channels,
     gui::{
-        background_image::{background_image, centered_cover},
+        background_image::{centered_cover, layered},
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
             ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
-            GamePanelMessage,
-            LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
+            GamePanelMessage, LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
@@ -27,6 +26,11 @@ use std::time::Duration;
 
 /// How long each background image stays up before rotating to the next one.
 const BACKGROUND_ROTATION_INTERVAL: Duration = Duration::from_secs(12);
+
+/// How often to silently re-check for a new game version while the app is open and
+/// idle at the main menu. This is a subscription tied to the running app, not a
+/// background OS process - it stops firing the moment the app is closed.
+const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(15 * 60);
 
 #[cfg(windows)]
 use crate::gui::Result;
@@ -96,6 +100,9 @@ impl DefaultView {
                     iced::time::every(BACKGROUND_ROTATION_INTERVAL)
                         .map(|_| DefaultViewMessage::BackgroundTick),
                 ),
+                Some(iced::time::every(UPDATE_CHECK_INTERVAL).map(|_| {
+                    DefaultViewMessage::GamePanel(GamePanelMessage::PeriodicUpdateCheck)
+                })),
             ])
             .flatten(),
         )
@@ -165,10 +172,18 @@ impl DefaultView {
         let background_bytes =
             BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
 
-        background_image(
+        let content = layered(
             centered_cover(Handle::from_memory(background_bytes)),
             container(main_row).width(Length::Fill).height(Length::Fill),
-        )
+        );
+
+        // The "new version available" prompt is a third layer on top of everything
+        // else - it blocks interaction with the rest of the window while it's up,
+        // same trick used to keep the background photo from stealing clicks.
+        match game_panel_component.update_prompt() {
+            Some(prompt) => layered(content, prompt.map(DefaultViewMessage::GamePanel)),
+            None => content,
+        }
     }
 
     pub fn update(
