@@ -379,8 +379,9 @@ impl GamePanelComponent {
                         if self.auto_triggered_download {
                             self.auto_triggered_download = false;
                             commands.push(Command::perform(async {}, move |_| {
+                                // `version` already comes with a leading "v".
                                 DefaultViewMessage::ShowToast(format!(
-                                    "Game updated to v{version}"
+                                    "Game updated to {version}"
                                 ))
                             }));
                         }
@@ -509,7 +510,9 @@ impl GamePanelComponent {
     pub fn view(&self, active_profile: &Profile) -> Element<'_, DefaultViewMessage> {
         let mut version_string = "Pre-Alpha".to_owned();
         if let Some(version) = &active_profile.version {
-            version_string.push_str(&format!(" · v{version}"));
+            // `version` already comes formatted with a leading "v" (e.g. "v0.26.1"),
+            // so no extra "v" goes here - see the "vv0.26.1" bug this fixes.
+            version_string.push_str(&format!(" · {version}"));
         }
         let available_notice = self
             .available_version
@@ -522,7 +525,7 @@ impl GamePanelComponent {
             .push(text(version_string).size(11).style(TextStyle::Muted));
         if let Some(available) = available_notice {
             version_row = version_row.push(
-                text(format!("v{available} available"))
+                text(format!("{available} available"))
                     .size(11)
                     .style(TextStyle::Accent),
             );
@@ -648,6 +651,7 @@ impl GamePanelComponent {
                 let update_button = button(
                     column![]
                         .align_items(Alignment::Center)
+                        .width(Length::Fill)
                         .spacing(2)
                         .push(text("Update").font(POPPINS_MEDIUM_FONT).size(15))
                         .push(text(version.clone()).size(11).style(TextStyle::Secondary)),
@@ -821,6 +825,7 @@ impl GamePanelComponent {
                     launch_button = button(
                         column![]
                             .align_items(Alignment::Center)
+                            .width(Length::Fill)
                             .padding([10, 40])
                             .push(
                                 text("Connect to")
@@ -855,6 +860,7 @@ impl GamePanelComponent {
                 let server_browser_button = button(
                     column![]
                         .align_items(Alignment::Center)
+                        .width(Length::Fill)
                         .padding([10, 0])
                         .push(
                             text("Server")

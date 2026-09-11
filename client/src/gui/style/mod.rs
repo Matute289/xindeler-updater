@@ -43,13 +43,11 @@ pub const TEXT_ON_ACCENT: Color = rgb8(11, 12, 18);
 // border/selected, 700/600 pressed (a deliberate multi-step drop, not a nuance).
 pub const GOLD_400: Color = rgb8(242, 180, 87);
 pub const GOLD_500: Color = rgb8(232, 163, 61);
-pub const GOLD_600: Color = rgb8(201, 134, 42);
 pub const GOLD_700: Color = rgb8(176, 115, 31);
 pub const GOLD_GLOW: Color = rgba8(232, 163, 61, 0.35);
 pub const ARCANE_400: Color = rgb8(110, 96, 226);
 pub const ARCANE_500: Color = rgb8(99, 85, 216);
 pub const ARCANE_600: Color = rgb8(83, 70, 188);
-pub const CRIMSON_400: Color = rgb8(204, 62, 67);
 pub const CRIMSON_500: Color = rgb8(192, 56, 60);
 pub const CRIMSON_600: Color = rgb8(163, 47, 51);
 pub const DANGER_TEXT: Color = rgb8(242, 119, 122);
@@ -63,7 +61,6 @@ pub const RADIUS_MD: f32 = 6.0;
 pub const RADIUS_LG: f32 = 10.0;
 pub const RADIUS_XL: f32 = 14.0;
 pub const RADIUS_PILL: f32 = 999.0;
-pub const BORDER_HAIRLINE: f32 = 1.0;
 
 const fn rgb8(red: u8, green: u8, blue: u8) -> Color {
     Color::from_rgb(

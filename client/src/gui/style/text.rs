@@ -1,6 +1,5 @@
 use crate::gui::style::{
-    DANGER_TEXT, GOLD_400, SUCCESS_TEXT, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY,
-    XindelerUpdaterTheme,
+    DANGER_TEXT, GOLD_400, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY, XindelerUpdaterTheme,
 };
 use iced::widget::{text, text::Appearance};
 
@@ -15,7 +14,6 @@ pub enum TextStyle {
     Muted,
     Accent,
     Danger,
-    Success,
 }
 
 impl text::StyleSheet for XindelerUpdaterTheme {
@@ -29,7 +27,6 @@ impl text::StyleSheet for XindelerUpdaterTheme {
             TextStyle::Muted => text_appearance(TEXT_MUTED),
             TextStyle::Accent => text_appearance(GOLD_400),
             TextStyle::Danger => text_appearance(DANGER_TEXT),
-            TextStyle::Success => text_appearance(SUCCESS_TEXT),
         }
     }
 }

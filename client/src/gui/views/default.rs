@@ -26,7 +26,9 @@ use crate::{
 
 use iced::{
     Alignment, Command, Length,
-    widget::{button, column, container, image::Handle, progress_bar, row, text},
+    widget::{
+        button, column, container, image::Handle, progress_bar, row, scrollable, text,
+    },
 };
 use std::time::Duration;
 
@@ -169,17 +171,27 @@ impl DefaultView {
             ..
         } = self;
 
-        let mut left_column =
-            column![].push(container(logo_panel_component.view()).height(Length::Fill));
-        if self.show_settings {
-            left_column = left_column.push(
-                container(settings_panel_component.view(active_profile))
+        // Logo and the game panel always keep their natural size, pinned to the top
+        // and bottom of the sidebar respectively. The space between them is the only
+        // flexible region: normally just an empty spacer, but when settings is open
+        // it holds the settings panel in a scrollable - so a tall settings panel
+        // scrolls internally instead of squeezing the logo or the Play button
+        // (see Matías's "se achica todo" report).
+        let middle: Element<'a, DefaultViewMessage> = if self.show_settings {
+            scrollable(settings_panel_component.view(active_profile))
+                .height(Length::Fill)
+                .into()
+        } else {
+            container(column![]).height(Length::Fill).into()
+        };
+
+        let mut left_column = column![]
+            .push(container(logo_panel_component.view()).height(Length::Shrink))
+            .push(middle)
+            .push(
+                container(game_panel_component.view(active_profile))
                     .height(Length::Shrink),
             );
-        }
-        left_column = left_column.push(
-            container(game_panel_component.view(active_profile)).height(Length::Shrink),
-        );
         if let Some(message) = &self.toast {
             left_column = left_column.push(container(toast_banner(message)).padding(10));
         }
@@ -483,7 +495,7 @@ fn launcher_update_dialog(
             modal_shell(
                 GOLD_500,
                 "LAUNCHER UPDATE REQUIRED",
-                format!("Update to v{}", update.version),
+                format!("Update to {}", update.version),
                 body,
                 Some(primary_action("Update now")),
             )
@@ -493,7 +505,7 @@ fn launcher_update_dialog(
                 .spacing(16)
                 .push(
                     text(format!(
-                        "Downloading and installing v{}. The launcher will restart on \
+                        "Downloading and installing {}. The launcher will restart on \
                          its own.",
                         update.version
                     ))
@@ -527,7 +539,7 @@ fn launcher_update_dialog(
             modal_shell(
                 CRIMSON_500,
                 "UPDATE FAILED",
-                format!("Couldn't update to v{}", update.version),
+                format!("Couldn't update to {}", update.version),
                 body,
                 Some(primary_action("Try again")),
             )
