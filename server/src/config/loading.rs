@@ -103,17 +103,17 @@ impl std::fmt::Display for Platform {
 impl Default for Config {
     fn default() -> Self {
         let channel = Channel {
-            name: "nightly".to_owned(),
+            name: "release".to_owned(),
             gitlab_secret: "secret".to_owned(),
             github_release_config: Some(GithubReleaseConfig {
                 github_token: "token".to_owned(),
-                github_repository_owner: "veloren".to_owned(),
-                github_repository: "veloren".to_owned(),
+                github_repository_owner: "Matute289".to_owned(),
+                github_repository: "xindeler-new-horizon".to_owned(),
                 github_release: "test".to_owned(),
             }),
             channel_filters: vec![AndFilter(vec![
                 Filter::TargetBranch(".*master.*".to_owned()),
-                Filter::Variable("channel".to_owned(), "nightly".to_owned()),
+                Filter::Variable("channel".to_owned(), "release".to_owned()),
             ])],
             build_map: vec![PlatformMapper {
                 filter: AndFilter(vec![Filter::BuildName(".*linux-x86_64.*".to_owned())]),

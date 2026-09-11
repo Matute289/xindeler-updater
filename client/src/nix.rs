@@ -9,12 +9,12 @@ const OS_RELEASE: &str = "/etc/os-release";
 
 /// Get patcher for patching voxygen.
 fn get_voxygen_patcher() -> Option<OsString> {
-    std::env::var_os("VELOREN_VOXYGEN_PATCHER")
+    std::env::var_os("XINDELER_VOXYGEN_PATCHER")
 }
 
 /// Get patcher for patching server-cli.
 fn get_server_patcher() -> Option<OsString> {
-    std::env::var_os("VELOREN_SERVER_CLI_PATCHER")
+    std::env::var_os("XINDELER_SERVER_CLI_PATCHER")
 }
 
 /// Check if we are on NixOS.

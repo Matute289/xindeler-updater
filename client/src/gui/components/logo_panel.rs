@@ -1,7 +1,5 @@
 use crate::{
-    assets::{
-        BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, VELOREN_LOGO,
-    },
+    assets::{BOOK_ICON, CHAT_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, XINDELER_LOGO},
     gui::{
         style::button::ButtonStyle,
         views::default::{DefaultViewMessage, Interaction},
@@ -20,7 +18,7 @@ pub struct LogoPanelComponent {}
 impl LogoPanelComponent {
     pub fn view(&self) -> Element<'_, DefaultViewMessage> {
         let col = column![]
-            .push(Image::new(Handle::from_memory(VELOREN_LOGO.to_vec())))
+            .push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())))
             .push(
                 container(
                     column![]
@@ -31,19 +29,16 @@ impl LogoPanelComponent {
                         ))
                         .push(link_widget(
                             CHAT_ICON,
-                            "https://xindeler.com/joinus/",
+                            "https://discord.gg/hgdhHY6vw",
                             "Community",
                         ))
                         .push(link_widget(
                             USER_ICON,
                             "https://xindeler.com/account/",
                             "Create Account",
-                        ))
-                        .push(link_widget(
-                            HEART_ICON,
-                            "https://opencollective.com/veloren/",
-                            "Donate",
                         )),
+                    // Donate link removed for now: Xindeler doesn't have its own
+                    // donation page yet.
                 )
                 .padding([40, 0, 0, 0]),
             );

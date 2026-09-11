@@ -1,6 +1,6 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
-    DARK_WHITE, LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
+    XindelerUpdaterTheme, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE, DARK_WHITE,
+    LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
 };
 use iced::{
     Background, Border, Color,
@@ -15,7 +15,6 @@ pub enum ContainerStyle {
     Announcement,
     LoadingBlogPost,
     BlogPost,
-    SidePanel,
     ColumnHeading,
     ChangelogHeader,
     Tooltip,
@@ -32,7 +31,6 @@ impl container::StyleSheet for XindelerUpdaterTheme {
             ContainerStyle::Dark => dark_container_style(),
             ContainerStyle::LoadingBlogPost => loading_blogpost_container_style(),
             ContainerStyle::BlogPost => blogpost_container_style(),
-            ContainerStyle::SidePanel => sidepanel_container_style(),
             ContainerStyle::ColumnHeading => column_heading_container_style(),
             ContainerStyle::ChangelogHeader => changelog_header_container_style(),
             ContainerStyle::Tooltip => tooltip_container_style(),
@@ -74,13 +72,6 @@ fn blogpost_container_style() -> Appearance {
     Appearance {
         background: Some(Background::Color(BLOG_POST_BACKGROUND_BLUE)),
         text_color: Some(Color::WHITE),
-        ..Appearance::default()
-    }
-}
-
-fn sidepanel_container_style() -> Appearance {
-    Appearance {
-        background: Some(Background::Color(BACKGROUND_BLUE)),
         ..Appearance::default()
     }
 }

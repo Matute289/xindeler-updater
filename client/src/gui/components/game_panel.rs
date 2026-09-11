@@ -43,6 +43,7 @@ pub enum GamePanelMessage {
     ProcessUpdate(ProcessUpdate),
     DownloadProgress(Box<Option<Progress>>),
     PlayPressed,
+    CancelDownload,
     ServerBrowserServerChanged(Option<String>),
     StartUpdate,
 }
@@ -71,6 +72,13 @@ pub struct GamePanelComponent {
     state: GamePanelState,
     download_progress: Option<Progress>,
     selected_server_browser_address: Option<String>,
+    /// The version the update check last found on the server, regardless of whether
+    /// it's been downloaded yet. `active_profile.version` only reflects the last
+    /// *successfully installed* version, so before the user confirms a download
+    /// there's otherwise no way for the UI to say what's actually about to be
+    /// installed - see the "why does it say v0.26.0 when v0.26.1 is out" confusion
+    /// this fixes.
+    available_version: Option<String>,
 }
 
 impl std::fmt::Debug for GamePanelState {
@@ -91,6 +99,7 @@ impl Default for GamePanelComponent {
             state: GamePanelState::ReadyToPlay,
             download_progress: None,
             selected_server_browser_address: None,
+            available_version: None,
         }
     }
 }
@@ -211,6 +220,13 @@ impl GamePanelComponent {
                     (None, None)
                 },
             },
+            GamePanelMessage::CancelDownload => match &self.state {
+                GamePanelState::Updating { .. } => {
+                    tracing::info!("Download cancelled by user");
+                    (Some(GamePanelState::Retry), None)
+                },
+                _ => (None, None),
+            },
             GamePanelMessage::StartUpdate => {
                 let state = State::ToBeEvaluated(active_profile.clone());
 
@@ -262,6 +278,7 @@ impl GamePanelComponent {
                     },
                     Some(Progress::ReadyToSync { version }) => {
                         tracing::debug!(?version, "Need to confirm the update");
+                        self.available_version = Some(version.clone());
                         (
                             if let GamePanelState::Updating { astate, .. } = &self.state {
                                 Some(GamePanelState::Updating {
@@ -287,7 +304,7 @@ impl GamePanelComponent {
                     (None, None)
                 },
                 ProcessUpdate::Exit(code) => {
-                    debug!("Veloren exited with {}", code);
+                    debug!("Xindeler exited with {}", code);
                     (
                         Some(GamePanelState::Retry),
                         Some(Command::perform(async {}, |_| {
@@ -297,7 +314,7 @@ impl GamePanelComponent {
                 },
                 ProcessUpdate::Error(err) => {
                     tracing::error!(
-                        "Failed to receive an update from Veloren process! {}",
+                        "Failed to receive an update from Xindeler process! {}",
                         err
                     );
                     (Some(GamePanelState::Retry), None)
@@ -317,11 +334,14 @@ impl GamePanelComponent {
     }
 
     pub fn view(&self, active_profile: &Profile) -> Element<'_, DefaultViewMessage> {
-        // TODO: Improve this with actual game version / date (requires changes to
-        // XindelerUpdater Server)
         let mut version_string = "Pre-Alpha".to_owned();
         if let Some(version) = &active_profile.version {
-            version_string.push_str(format!(" ({})", &version[..7]).as_str())
+            version_string.push_str(&format!(" ({version})"));
+        }
+        if let Some(available) = &self.available_version
+            && active_profile.version.as_ref() != Some(available)
+        {
+            version_string.push_str(&format!(" — {available} available"));
         }
 
         column![]
@@ -475,6 +495,25 @@ impl GamePanelComponent {
                         .push(
                             progress_bar(0.0..=100.0f32, percent)
                                 .height(Length::Fixed(28.0)),
+                        )
+                        .push(
+                            container(
+                                button(
+                                    text("Cancel")
+                                        .font(POPPINS_BOLD_FONT)
+                                        .size(14)
+                                        .horizontal_alignment(Horizontal::Center)
+                                        .vertical_alignment(Vertical::Center)
+                                        .width(Length::Fill),
+                                )
+                                .style(ButtonStyle::Download(DownloadButtonStyle::Cancel))
+                                .width(Length::Fill)
+                                .height(Length::Fixed(36.0))
+                                .on_press(DefaultViewMessage::GamePanel(
+                                    GamePanelMessage::CancelDownload,
+                                )),
+                            )
+                            .padding([10, 0, 0, 0]),
                         ),
                 )
                 .into()

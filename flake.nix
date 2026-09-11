@@ -33,7 +33,7 @@
     ...
   }: let
     filteredSource = builtins.path {
-      name = "airshipper-source";
+      name = "xindeler-updater-source";
       path = toString ./.;
       filter = path: type:
         nixpkgs.lib.all
@@ -63,23 +63,23 @@
       );
     in
       pkgs.writeShellScript "voxygen-patch" ''
-        echo "making veloren-voxygen executable"
-        chmod +x veloren-voxygen
-        echo "patching veloren-voxygen dynamic linker"
+        echo "making xindeler-voxygen executable"
+        chmod +x xindeler-voxygen
+        echo "patching xindeler-voxygen dynamic linker"
         ${pkgs.patchelf}/bin/patchelf \
           --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
           --set-rpath "${nixpkgs.lib.makeLibraryPath runtimeLibs}" \
-          veloren-voxygen
+          xindeler-voxygen
       '';
 
     makeServerPatcher = pkgs:
       pkgs.writeShellScript "server-cli-patch" ''
-        echo "making veloren-server-cli executable"
-        chmod +x veloren-server-cli
-        echo "patching veloren-server-cli dynamic linker"
+        echo "making xindeler-server-cli executable"
+        chmod +x xindeler-server-cli
+        echo "patching xindeler-server-cli dynamic linker"
         ${pkgs.patchelf}/bin/patchelf \
           --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
-          veloren-server-cli
+          xindeler-server-cli
       '';
   in
     parts.lib.mkFlake {inherit inputs;} {
@@ -121,24 +121,24 @@
           ''
             cp -rs --no-preserve=mode,ownership ${old} $out
             wrapProgram $out/bin/* \
-              --set VELOREN_VOXYGEN_PATCHER ${voxygenPatcher} \
-              --set VELOREN_SERVER_CLI_PATCHER ${serverPatcher} \
+              --set XINDELER_VOXYGEN_PATCHER ${voxygenPatcher} \
+              --set XINDELER_SERVER_CLI_PATCHER ${serverPatcher} \
           '';
-        airshipper = wrapPatchers outputs."airshipper".packages.release;
+        xindelerUpdater = wrapPatchers outputs."xindeler-updater".packages.release;
       in {
-        devShells.default = outputs."airshipper".devShell;
-        packages.default = airshipper;
-        packages.airshipper = airshipper;
-        packages.airshipper-dev = wrapPatchers outputs."airshipper".packages.dev;
-        packages.airshipper-server-dev = outputs."airshipper-server".packages.dev;
-        packages.airshipper-server-release = outputs."airshipper-server".packages.release;
+        devShells.default = outputs."xindeler-updater".devShell;
+        packages.default = xindelerUpdater;
+        packages.xindeler-updater = xindelerUpdater;
+        packages.xindeler-updater-dev = wrapPatchers outputs."xindeler-updater".packages.dev;
+        packages.xindeler-updater-server-dev = outputs."xindeler-updater-server".packages.dev;
+        packages.xindeler-updater-server-release = outputs."xindeler-updater-server".packages.release;
 
-        nci.projects."airshipper" = {
+        nci.projects."xindeler-updater" = {
           export = true;
           path = filteredSource;
         };
 
-        nci.crates."airshipper" = {
+        nci.crates."xindeler-updater" = {
           export = false;
           runtimeLibs = with pkgs;
             [
@@ -156,7 +156,7 @@
           drvConfig.mkDerivation = commonMkDerivation;
         };
 
-        nci.crates."airshipper-server" = {
+        nci.crates."xindeler-updater-server" = {
           # Need to reexport since defining runtimeLibs here causes a strange error with tests or clippy
           export = false;
           runtimeLibs = serverMkDerivation.buildInputs;

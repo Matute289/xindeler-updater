@@ -36,7 +36,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         std::fs::create_dir_all(local_storage_folder.clone()).unwrap();
     }
 
-    tracing::info!("Starting veloren xindeler-updater");
+    tracing::info!("Starting xindeler-updater");
 
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(server());

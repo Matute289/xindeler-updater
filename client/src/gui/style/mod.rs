@@ -19,7 +19,6 @@ pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
 const SLATE: Color = Color::from_rgb(0.35, 0.43, 0.46);
 const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
 pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
-const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);

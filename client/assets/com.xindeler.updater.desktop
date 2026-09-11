@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Xindeler Updater
+Comment=Official launcher for Xindeler - the open-world, open-source multiplayer voxel RPG
+Exec=xindeler-updater
+Categories=Game
+Keywords=xindeler
+Icon=com.xindeler.updater
+Terminal=false

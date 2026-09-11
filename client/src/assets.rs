@@ -1,11 +1,10 @@
 use iced::{Font, font::Weight};
 
-pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
-pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
+pub const XINDELER_LOGO: &[u8] = include_bytes!("../assets/images/xindeler-logo.png");
+pub const XINDELER_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
 pub const SETTINGS_ICON: &[u8] = include_bytes!("../assets/icons/settings.png");
 pub const CHANGELOG_ICON: &[u8] = include_bytes!("../assets/icons/changelog.png");
 pub const CHAT_ICON: &[u8] = include_bytes!("../assets/icons/chat.png");
-pub const HEART_ICON: &[u8] = include_bytes!("../assets/icons/heart.png");
 pub const BOOK_ICON: &[u8] = include_bytes!("../assets/icons/book.png");
 pub const USER_ICON: &[u8] = include_bytes!("../assets/icons/user.png");
 pub const DOWNLOAD_ICON: &[u8] = include_bytes!("../assets/icons/download.png");
@@ -13,6 +12,21 @@ pub const FOLDER_ICON: &[u8] = include_bytes!("../assets/icons/folder.png");
 pub const UP_RIGHT_ARROW_ICON: &[u8] =
     include_bytes!("../assets/icons/up_right_arrow.png");
 pub const STAR_ICON: &[u8] = include_bytes!("../assets/icons/star.png");
+
+/// Rotating background art for the sidebar panels. Order doesn't matter.
+pub const BACKGROUND_IMAGES: &[&[u8]] = &[
+    include_bytes!("../assets/images/backgrounds/dragon-castle-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/arcane-sanctum-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/ancient-forest-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/crystal-river-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/darkfire-dungeon-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/front-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/misty-mountains-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/stonehaven-castle-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/village-of-willowdale-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/adventurers-guild-img.jpg"),
+    include_bytes!("../assets/images/backgrounds/xindeler-banner.jpg"),
+];
 
 pub const PING1_ICON: &[u8] = include_bytes!("../assets/icons/ping1.png");
 pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");

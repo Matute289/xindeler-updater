@@ -16,7 +16,7 @@ impl Metrics {
         let downloads = IntCounterVec::new(
             Opts::new(
                 "downloads",
-                "shows the number of requests which want to download Veloren by os and \
+                "shows the number of requests which want to download Xindeler by os and \
                  arch",
             ),
             &["os", "arch", "channel"],

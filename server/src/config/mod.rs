@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 pub mod loading;
 
-/// The project ID of veloren on gitlab.
+/// The GitLab project ID this webhook validates incoming payloads against.
 pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
@@ -284,22 +284,22 @@ mod tests {
             },
             project: Project {
                 id: 10174980,
-                name: "veloren".to_owned(),
-                description: "Veloren is a multiplayer voxel RPG written in Rust. It is inspired by games such as Cube World, Legend of Zelda: Breath of the Wild, Dwarf Fortress and Minecraft.".to_owned(),
-                web_url: "https://gitlab.com/veloren/veloren".to_owned(),
-                avatar_url: Some("https://gitlab.com/uploads/-/system/project/avatar/10174980/veloren-square-big.png".to_owned()),
-                git_ssh_url: "git@gitlab.com:veloren/veloren.git".to_owned(),
-                git_http_url: "https://gitlab.com/veloren/veloren.git".to_owned(),
-                namespace: "Veloren".to_owned(),
+                name: "xindeler".to_owned(),
+                description: "Xindeler is a multiplayer voxel RPG written in Rust.".to_owned(),
+                web_url: "https://gitlab.com/xindeler/xindeler".to_owned(),
+                avatar_url: Some("https://gitlab.com/uploads/-/system/project/avatar/10174980/xindeler-square-big.png".to_owned()),
+                git_ssh_url: "git@gitlab.com:xindeler/xindeler.git".to_owned(),
+                git_http_url: "https://gitlab.com/xindeler/xindeler.git".to_owned(),
+                namespace: "Xindeler".to_owned(),
                 visibility_level: 20,
-                path_with_namespace: "veloren/veloren".to_owned(),
+                path_with_namespace: "xindeler/xindeler".to_owned(),
                 default_branch: "master".to_owned(),
             },
             commit: Commit {
                 id: "d4c98e877501d80af663efa7601b5d36007f5593".to_owned(),
-                message: "Merge branch 'xMAC94x/linux-aarch64' into 'master'\n\nadd linux-aarch64 on master builds to be consistent\n\nSee merge request veloren/veloren!3250".to_owned(),
+                message: "Merge branch 'xMAC94x/linux-aarch64' into 'master'\n\nadd linux-aarch64 on master builds to be consistent\n\nSee merge request xindeler/xindeler!3250".to_owned(),
                 timestamp: chrono::DateTime::from_naive_utc_and_offset(chrono::NaiveDate::from_ymd_opt(2022, 3, 3).unwrap().and_hms_opt(16, 37, 53).unwrap(), chrono::Utc),
-                url: "https://gitlab.com/veloren/veloren/-/commit/d4c98e877501d80af663efa7601b5d36007f5593".to_owned(),
+                url: "https://gitlab.com/xindeler/xindeler/-/commit/d4c98e877501d80af663efa7601b5d36007f5593".to_owned(),
                 author: Author {
                     name: "Marcel".to_owned(),
                     email: "Marcel@example.com".to_owned(),

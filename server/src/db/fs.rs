@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Default, Clone, Copy)]
 pub struct FsStorage;
 
-pub const PROFILE_FOLDER: &str = "nightly";
+pub const PROFILE_FOLDER: &str = "release";
 
 impl FsStorage {
     /// store artifact
