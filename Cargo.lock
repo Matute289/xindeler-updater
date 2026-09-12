@@ -7453,7 +7453,7 @@ dependencies = [
 
 [[package]]
 name = "xindeler-updater"
-version = "0.17.0"
+version = "1.0.0"
 dependencies = [
  "bytes",
  "bytesize",
@@ -7510,7 +7510,7 @@ dependencies = [
 
 [[package]]
 name = "xindeler-updater-server"
-version = "0.17.0"
+version = "1.0.0"
 dependencies = [
  "axum",
  "bytes",

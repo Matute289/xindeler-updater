@@ -1,7 +1,7 @@
 [package]
 name = "xindeler-updater"
 description = "Provides automatic updates for Xindeler."
-version = "0.17.0"
+version = "1.0.0"
 edition = "2024"
 publish = false
 default-run = "xindeler-updater"
