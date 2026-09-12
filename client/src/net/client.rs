@@ -44,8 +44,15 @@ pub(crate) fn get_etag(x: &reqwest::Response) -> String {
         .unwrap_or_else(|| "MISSING_ETAG".into())
 }
 
+/// Errors on a non-2xx response instead of returning it as `Ok`. Without this, a
+/// transient 5xx (found in the wild: raw.githubusercontent.com serving a Varnish
+/// "503 Backend.max_conn reached" HTML page) gets read as if it were the real
+/// response body by every caller - e.g. the changelog panel would markdown-parse the
+/// error page, find no `##` headings, and silently cache an empty changelog as if it
+/// had loaded successfully, rather than the fetch failing so its one retry can kick
+/// in.
 pub(crate) async fn query<U: IntoUrl>(url: U) -> Result<reqwest::Response> {
-    Ok(WEB_CLIENT.get(url).send().await?)
+    Ok(WEB_CLIENT.get(url).send().await?.error_for_status()?)
 }
 
 #[derive(serde::Deserialize)]
@@ -68,7 +75,8 @@ pub(crate) async fn fetch_latest_game_tag() -> Result<String> {
 
     tags.into_iter()
         .filter_map(|tag| {
-            let version = semver::Version::parse(tag.name.trim_start_matches('v')).ok()?;
+            let version =
+                semver::Version::parse(tag.name.trim_start_matches('v')).ok()?;
             Some((version, tag.name))
         })
         .max_by(|(a, _), (b, _)| a.cmp(b))

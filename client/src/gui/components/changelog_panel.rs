@@ -39,6 +39,7 @@ pub enum ChangelogPanelMessage {
     LoadChangelog(Result<ChangelogPanelComponent>),
     UpdateChangelog(Result<Option<ChangelogPanelComponent>>),
     SaveChangelog,
+    RetryLoad,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +50,12 @@ pub struct ChangelogPanelComponent {
     pub etag: String,
     #[serde(skip, default = "default_display_count")]
     pub display_count: usize,
+    /// Set when there's genuinely nothing to show (no cache, and the fetch - retries
+    /// included - never succeeded), so the panel can say so instead of silently
+    /// rendering blank. Never set while `versions` is non-empty - a background
+    /// update-check failing shouldn't hide content that's already displayed fine.
+    #[serde(skip)]
+    pub load_failed: bool,
 }
 
 pub fn default_display_count() -> usize {
@@ -66,13 +73,39 @@ impl ChangelogPanelComponent {
         })
     }
 
+    /// raw.githubusercontent.com has been observed returning transient 5xx errors
+    /// (a Varnish "Backend.max_conn reached" page) - retried a few times with a
+    /// short delay before giving up, rather than the single attempt this used to
+    /// make.
+    const FETCH_ATTEMPTS: u32 = 3;
+    const FETCH_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(500);
+
+    async fn fetch_changelog_response(url: &str) -> Result<reqwest::Response> {
+        let mut last_error = None;
+        for attempt in 1..=Self::FETCH_ATTEMPTS {
+            match net::query(url).await {
+                Ok(response) => return Ok(response),
+                Err(e) => {
+                    debug!(?e, attempt, url, "Changelog fetch attempt failed");
+                    last_error = Some(e);
+                    if attempt < Self::FETCH_ATTEMPTS {
+                        tokio::time::sleep(Self::FETCH_RETRY_DELAY).await;
+                    }
+                },
+            }
+        }
+        Err(last_error.expect("loop always sets this before exiting without returning"))
+    }
+
     #[allow(clippy::while_let_on_iterator)]
     async fn fetch() -> Result<Option<Self>> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
 
         let changelog_ref = Self::changelog_ref().await;
-        let changelog =
-            net::query(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?;
+        let changelog = Self::fetch_changelog_response(
+            &consts::CHANGELOG_URL.replace("{tag}", &changelog_ref),
+        )
+        .await?;
         let etag = net::get_etag(&changelog);
 
         let changelog_text = changelog.text().await?;
@@ -236,6 +269,7 @@ impl ChangelogPanelComponent {
             etag,
             versions,
             display_count: 2,
+            load_failed: false,
         }))
     }
 
@@ -325,8 +359,22 @@ impl ChangelogPanelComponent {
                 Ok(None) => None,
                 Err(e) => {
                     tracing::trace!("Failed to update changelog: {}", e);
+                    // Only worth flagging when there's nothing already on screen -
+                    // a background update-check failing shouldn't hide content
+                    // that's already showing fine.
+                    if self.versions.is_empty() {
+                        self.load_failed = true;
+                    }
                     None
                 },
+            },
+            ChangelogPanelMessage::RetryLoad => {
+                self.load_failed = false;
+                Some(Command::perform(Self::fetch(), |update| {
+                    DefaultViewMessage::ChangelogPanel(
+                        ChangelogPanelMessage::UpdateChangelog(update),
+                    )
+                }))
             },
             ChangelogPanelMessage::SaveChangelog => None,
             ChangelogPanelMessage::ScrollPositionChanged(pos) => {
@@ -341,8 +389,31 @@ impl ChangelogPanelComponent {
     pub fn view(&self) -> Element<'_, DefaultViewMessage> {
         let mut changelog = column![].spacing(10);
 
-        for version in &mut self.versions.iter().take(self.display_count) {
-            changelog = changelog.push(version.view());
+        if self.versions.is_empty() && self.load_failed {
+            changelog = changelog.push(
+                column![]
+                    .spacing(10)
+                    .align_items(Alignment::Center)
+                    .width(Length::Fill)
+                    .padding(20)
+                    .push(
+                        text(t!("changelog_panel.load_error"))
+                            .size(14)
+                            .style(TextStyle::Danger),
+                    )
+                    .push(
+                        button(text(t!("changelog_panel.retry_button")).size(13))
+                            .style(ButtonStyle::Secondary)
+                            .padding([8, 16])
+                            .on_press(DefaultViewMessage::ChangelogPanel(
+                                ChangelogPanelMessage::RetryLoad,
+                            )),
+                    ),
+            );
+        } else {
+            for version in &mut self.versions.iter().take(self.display_count) {
+                changelog = changelog.push(version.view());
+            }
         }
 
         let top_row = container(
