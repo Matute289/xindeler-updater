@@ -1,7 +1,8 @@
 use crate::gui::style::{
-    XindelerUpdaterTheme, LIGHT_NAVY_BLUE, NAVY_BLUE, pick_list::PickListStyle,
+    INK_600, INK_700, RADIUS_MD, TEXT_PRIMARY, WHITE_A10, XindelerUpdaterTheme,
+    pick_list::PickListStyle,
 };
-use iced::{Background, Border, Color, overlay, overlay::menu::Appearance};
+use iced::{Background, Border, overlay, overlay::menu::Appearance};
 
 #[derive(Copy, Clone, Debug, Default)]
 pub enum MenuStyle {
@@ -20,14 +21,14 @@ impl overlay::menu::StyleSheet for XindelerUpdaterTheme {
 
     fn appearance(&self, _: &Self::Style) -> Appearance {
         Appearance {
-            text_color: Color::WHITE,
-            background: Background::Color(NAVY_BLUE),
-            selected_background: Background::Color(LIGHT_NAVY_BLUE),
-            selected_text_color: Color::WHITE,
+            text_color: TEXT_PRIMARY,
+            background: Background::Color(INK_700),
+            selected_background: Background::Color(INK_600),
+            selected_text_color: TEXT_PRIMARY,
             border: Border {
-                color: Color::WHITE,
-                width: 0.0,
-                radius: 0.0.into(),
+                color: WHITE_A10,
+                width: 1.0,
+                radius: RADIUS_MD.into(),
             },
         }
     }

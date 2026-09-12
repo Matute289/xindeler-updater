@@ -156,7 +156,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                 .unwrap(),
         ),
-        min_size: Some(Size::new(400.0, 250.0)),
+        min_size: Some(Size::new(880.0, 560.0)),
         ..Default::default()
     };
 
@@ -170,7 +170,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         window: window_settings,
         flags: cmd,
         default_font: crate::assets::POPPINS_FONT,
-        default_text_size: 20.0.into(),
+        default_text_size: 14.0.into(),
         antialiasing: true,
         id: Some(XindelerUpdater::APP_ID.to_string()),
         fonts: vec![

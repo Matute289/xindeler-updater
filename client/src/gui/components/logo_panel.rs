@@ -11,37 +11,45 @@ use iced::{
     alignment::Vertical,
     widget::{Image, button, column, container, image::Handle, row, text, text::Shaping},
 };
+use rust_i18n::t;
 
 #[derive(Clone, Default, Debug)]
 pub struct LogoPanelComponent {}
 
 impl LogoPanelComponent {
-    pub fn view(&self) -> Element<'_, DefaultViewMessage> {
-        let col = column![]
-            .push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())))
-            .push(
+    /// `show_links` is false while Settings is open - the sidebar has no room for
+    /// both, and the logo staying visible matters more than the nav links (Matías:
+    /// "Settings tiene que tapar las 3 URLs esas, el Xindeler que se siga viendo").
+    pub fn view(&self, show_links: bool) -> Element<'_, DefaultViewMessage> {
+        let mut col =
+            column![].push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())));
+
+        if show_links {
+            col = col.push(
                 container(
                     column![]
+                        .spacing(2)
                         .push(link_widget(
                             BOOK_ICON,
                             "https://book.xindeler.com/",
-                            "Game Manual",
+                            t!("logo_panel.game_manual_link"),
                         ))
                         .push(link_widget(
                             CHAT_ICON,
                             "https://discord.gg/hgdhHY6vw",
-                            "Community",
+                            t!("logo_panel.community_link"),
                         ))
                         .push(link_widget(
                             USER_ICON,
                             "https://xindeler.com/account/",
-                            "Create Account",
+                            t!("logo_panel.create_account_link"),
                         )),
                     // Donate link removed for now: Xindeler doesn't have its own
                     // donation page yet.
                 )
-                .padding([40, 0, 0, 0]),
+                .padding([32, 0, 0, 0]),
             );
+        }
 
         let container: Container<'_, DefaultViewMessage> = container(col).padding(20);
         container.into()
@@ -51,7 +59,7 @@ impl LogoPanelComponent {
 fn link_widget<'a>(
     image_bytes: &[u8],
     url: &'a str,
-    link_text: &'a str,
+    link_text: impl ToString,
 ) -> Element<'a, DefaultViewMessage> {
     container(
         button(
@@ -60,14 +68,19 @@ fn link_widget<'a>(
                 .push(
                     container(
                         Image::new(Handle::from_memory(image_bytes.to_vec()))
-                            .height(Length::Fixed(24.0))
-                            .width(Length::Fixed(24.0)),
+                            .height(Length::Fixed(20.0))
+                            .width(Length::Fixed(20.0)),
                     )
                     .align_y(Vertical::Center),
                 )
                 .push(
-                    container(text(link_text).size(14).shaping(Shaping::Advanced))
-                        .align_y(Vertical::Center),
+                    container(
+                        text(link_text)
+                            .font(crate::assets::POPPINS_MEDIUM_FONT)
+                            .size(13)
+                            .shaping(Shaping::Advanced),
+                    )
+                    .align_y(Vertical::Center),
                 )
                 .push(
                     container(Image::new(Handle::from_memory(
@@ -77,10 +90,12 @@ fn link_widget<'a>(
                 )
                 .spacing(10),
         )
+        .padding([8, 10])
+        .width(Length::Fill)
         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
             url.to_string(),
         )))
-        .style(ButtonStyle::Transparent),
+        .style(ButtonStyle::Ghost),
     )
     .height(Length::Shrink)
     .into()

@@ -1,0 +1,134 @@
+_version: 1
+
+# English - the fallback locale (see `rust_i18n::i18n!` in client/src/main.rs).
+# Keys are grouped by the GUI module the string lives in, so this file can be read
+# side by side with client/src/gui/. es.yml mirrors this file key for key.
+
+# client/src/gui/components/settings_panel.rs
+settings:
+  heading: "Settings"
+  section_general: "General"
+  section_graphics: "Graphics"
+  section_game: "Game"
+  section_advanced: "Advanced"
+  language_label: "LANGUAGE"
+  language_tooltip: "The language used for the launcher interface"
+  graphics_device_label: "GRAPHICS DEVICE"
+  graphics_device_tooltip: "The graphics device that the game will use. \nLeave on Auto unless you are experiencing issues"
+  graphics_mode_label: "GRAPHICS MODE"
+  graphics_mode_tooltip: "The rendering backend that the game will use.\nLeave on Auto unless you are experiencing issues"
+  graphics_auto_only_note: "Limited to Auto until the game is installed and has run once - that's what lets it report your real GPU and supported rendering backends."
+  log_level_label: "LOG LEVEL"
+  log_level_tooltip: "Changes the amount of information that the game outputs to its log file"
+  server_label: "SERVER"
+  server_tooltip: "The download server used for game downloads"
+  channel_label: "CHANNEL"
+  channel_tooltip: "The download channel used for game downloads"
+  assets_override_label: "ASSETS OVERRIDE"
+  assets_override_placeholder: "/path/to/asset/folder/with/overrides"
+  assets_override_tooltip: "Folder where you can put modified assets for testing or fun!"
+  assets_override_dialog_title: "Select a folder where your asset overrides live"
+  env_vars_label: "ENVIRONMENT VARIABLES"
+  env_vars_tooltip: "Environment variables set when running Voxygen"
+  auto_update_game_label: "Auto-update game"
+  auto_update_launcher_label: "Auto-update launcher"
+  auto_update_note: "When on, a new version downloads and installs automatically - no confirmation prompt, just a quick notice once it's done."
+  game_version_label: "GAME VERSION"
+  launcher_version_label: "LAUNCHER VERSION"
+  version_not_installed: "Not installed"
+
+# client/src/gui/components/game_panel.rs
+game_panel:
+  heading: "Game Version"
+  version_prealpha: "Pre-Alpha"
+  version_available: "%{version} available"
+  settings_tooltip: "Settings"
+  play_button: "PLAY"
+  play_offline_button: "PLAY OFFLINE"
+  retry_button: "RETRY"
+  checking_button: "CHECKING…"
+  download_button: "DOWNLOAD"
+  running_button: "RUNNING"
+  update_button: "Update"
+  cancel_button: "Cancel"
+  connect_to_line1: "Connect to"
+  connect_to_line2: "selected server"
+  server_browser_line1: "Server"
+  server_browser_line2: "Browser"
+  step_downloading: "DOWNLOADING"
+  step_unzipping: "UNZIPPING"
+  step_deleting: "DELETING"
+  step_finalizing: "FINALIZING"
+  step_preparing: "PREPARING"
+  progress_bytes: "%{downloaded} / %{total}"
+  progress_speed: "%{rate} MB/s"
+  time_remaining_with_hours: "%{hours}:%{minutes}:%{seconds} left"
+  time_remaining: "%{minutes}:%{seconds} left"
+  update_prompt_eyebrow: "GAME UPDATE"
+  update_prompt_title: "Version %{version} is available"
+  update_prompt_body: "You can install it now, or keep playing on your current version and update later."
+  update_prompt_not_now: "Not now"
+  update_prompt_update_now: "Update now"
+  toast_game_updated: "Game updated to %{version}"
+
+# client/src/gui/components/logo_panel.rs
+logo_panel:
+  game_manual_link: "Game Manual"
+  community_link: "Community"
+  create_account_link: "Create Account"
+
+# client/src/gui/components/announcement_panel.rs
+announcement_panel:
+  outdated: "XindelerUpdater is outdated, please update to the latest release!"
+  news: "News from %{date}: %{message}"
+  outdated_with_news: "XindelerUpdater is outdated! News: %{message}"
+  download_button: "Download XindelerUpdater"
+
+# client/src/gui/components/changelog_panel.rs
+changelog_panel:
+  heading: "Latest Patch Notes"
+  recent_changes_button: "Recent Changes"
+  nightly_version: "Nightly"
+
+# client/src/gui/components/news_panel.rs
+news_panel:
+  loading: "Loading..."
+  eyebrow: "DEVELOPMENT"
+
+# client/src/gui/components/server_browser_panel.rs
+server_browser_panel:
+  heading: "Server Browser"
+  get_listed_button: "Get your server listed here"
+  column_server: "Server"
+  column_location: "Location"
+  column_players: "Players"
+  column_ping: "Ping (ms)"
+  custom_auth_tooltip: "This server is using a custom auth server. Do not log into this server unless you trust the owner."
+  official_server_tooltip: "This is an official server operated by the Xindeler project"
+  location_unknown: "Unknown"
+  ping_error: "Error"
+  battlemode_global_pvp: "Global PvP"
+  battlemode_global_pve: "Global PvE"
+  battlemode_per_player: "Player selected"
+  battlemode: "Battlemode: %{mode}"
+  game_version: "Version: %{hash}"
+  no_query_protocol: "Does not support the query server protocol :("
+  description_label: "Description: "
+  email_field: "Email: %{value}"
+  extra_field: "%{name}: %{value}"
+  fetch_error: "Error fetching server list"
+
+# client/src/gui/views/default.rs
+default_view:
+  launcher_update_eyebrow: "LAUNCHER UPDATE REQUIRED"
+  launcher_update_title: "Update to %{version}"
+  launcher_update_body: "The launcher needs to update before you can download or play. It only takes a moment."
+  launcher_update_confirm: "Update now"
+  launcher_update_applying_eyebrow: "INSTALLING"
+  launcher_update_applying_title: "Updating the launcher…"
+  launcher_update_applying_body: "Downloading and installing %{version}. The launcher will restart on its own."
+  launcher_update_failed_eyebrow: "UPDATE FAILED"
+  launcher_update_failed_title: "Couldn't update to %{version}"
+  launcher_update_failed_body: "Check your connection and try again."
+  launcher_update_retry: "Try again"
+  toast_launcher_updated: "Launcher updated from v%{old_version} to v%{new_version}"

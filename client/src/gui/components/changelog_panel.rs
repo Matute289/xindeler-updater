@@ -1,8 +1,7 @@
 use crate::{
     Result,
     assets::{
-        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
-        UP_RIGHT_ARROW_ICON,
+        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::RECENT_CHANGES_URL,
@@ -30,6 +29,7 @@ use ron::{
     de::from_str,
     ser::{PrettyConfig, to_string_pretty},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -113,8 +113,10 @@ impl ChangelogPanelComponent {
                     },
                     None => (heading_text, None),
                 };
-                let version =
-                    version.trim_start_matches('[').trim_end_matches(']').to_string();
+                let version = version
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .to_string();
 
                 let mut sections: Vec<(String, Vec<String>)> = Vec::new();
                 let mut notes: Vec<String> = Vec::new();
@@ -240,7 +242,8 @@ impl ChangelogPanelComponent {
     /// Returns new Changelog in case remote one is newer
     async fn update_changelog(version: String) -> Result<Option<Self>> {
         let changelog_ref = Self::changelog_ref().await;
-        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?
+        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref))
+            .await?
         {
             Some(remote_version) => {
                 if version != remote_version {
@@ -353,8 +356,8 @@ impl ChangelogPanelComponent {
                 )
                 .push(
                     container(
-                        text("Latest Patch Notes")
-                            .style(TextStyle::Dark)
+                        text(t!("changelog_panel.heading"))
+                            .style(TextStyle::Primary)
                             .size(14)
                             .font(POPPINS_MEDIUM_FONT),
                     )
@@ -368,8 +371,8 @@ impl ChangelogPanelComponent {
                         button(
                             row![]
                                 .push(
-                                    text("Recent Changes")
-                                        .style(TextStyle::LightGrey)
+                                    text(t!("changelog_panel.recent_changes_button"))
+                                        .style(TextStyle::Muted)
                                         .size(10)
                                         .font(POPPINS_MEDIUM_FONT)
                                         .horizontal_alignment(Horizontal::Center),
@@ -385,7 +388,7 @@ impl ChangelogPanelComponent {
                         )))
                         .padding([4, 10, 0, 10])
                         .height(Length::Fixed(20.0))
-                        .style(ButtonStyle::Browser(BrowserButtonStyle::Extra)),
+                        .style(ButtonStyle::Chip(BrowserButtonStyle::Extra)),
                     )
                     .padding([0, 10, 0, 0])
                     .height(Length::Fill)
@@ -437,7 +440,7 @@ impl ChangelogVersion {
         let version_string = match &self.date {
             Some(date) => format!("v{} ({})", self.version, date),
             None => match self.version.as_str() {
-                "Unreleased" => "Nightly".to_string(),
+                "Unreleased" => t!("changelog_panel.nightly_version").into_owned(),
                 _ => format!("v{}", self.version),
             },
         };
@@ -459,7 +462,9 @@ impl ChangelogVersion {
             let mut section_col = column![]
                 .push(
                     text(section_name)
-                        .size(16)
+                        .font(POPPINS_MEDIUM_FONT)
+                        .size(13)
+                        .style(TextStyle::Secondary)
                         .line_height(LineHeight::Relative(2.0)),
                 )
                 .spacing(2);
@@ -470,15 +475,15 @@ impl ChangelogVersion {
                         row![]
                             .push(
                                 text(" •  ")
-                                    .font(POPPINS_LIGHT_FONT)
-                                    .size(12)
-                                    .line_height(LineHeight::Absolute(16.into())),
+                                    .size(13)
+                                    .style(TextStyle::Secondary)
+                                    .line_height(LineHeight::Relative(1.5)),
                             )
                             .push(
                                 text(line)
-                                    .font(POPPINS_LIGHT_FONT)
-                                    .size(12)
-                                    .line_height(LineHeight::Absolute(16.into())),
+                                    .size(13)
+                                    .style(TextStyle::Secondary)
+                                    .line_height(LineHeight::Relative(1.5)),
                             ),
                     )
                     .padding([0, 0, 1, 10]),

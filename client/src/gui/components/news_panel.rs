@@ -1,5 +1,5 @@
 use crate::{
-    assets::POPPINS_LIGHT_FONT,
+    assets::POPPINS_MEDIUM_FONT,
     consts,
     gui::{
         rss_feed::{
@@ -16,6 +16,7 @@ use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, image, scrollable, text},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -104,7 +105,7 @@ impl NewsPost {
             )
         } else {
             container(
-                text("Loading...")
+                text(t!("news_panel.loading"))
                     .size(14)
                     .horizontal_alignment(Horizontal::Center)
                     .vertical_alignment(Vertical::Center)
@@ -125,9 +126,19 @@ impl NewsPost {
                     container(
                         column![]
                             .spacing(3)
-                            .push(text("Development").size(12).style(TextStyle::Lilac))
-                            .push(text(&post.title).size(16).font(POPPINS_LIGHT_FONT))
-                            .push(text(&post.description).size(11).line_height(1.5)),
+                            .push(
+                                text(t!("news_panel.eyebrow"))
+                                    .size(10)
+                                    .font(POPPINS_MEDIUM_FONT)
+                                    .style(TextStyle::Accent),
+                            )
+                            .push(text(&post.title).size(15).font(POPPINS_MEDIUM_FONT))
+                            .push(
+                                text(&post.description)
+                                    .size(12)
+                                    .style(TextStyle::Secondary)
+                                    .line_height(1.5),
+                            ),
                     )
                     .width(Length::Fill)
                     .style(ContainerStyle::BlogPost)

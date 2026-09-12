@@ -10,10 +10,11 @@ use crate::{
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
+        custom_widgets::modal_shell,
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
         style::{
-            button::{ButtonState, ButtonStyle, DownloadButtonStyle},
-            container::ContainerStyle,
+            ARCANE_500, CRIMSON_500, GOLD_500, button::ButtonStyle,
+            container::ContainerStyle, text::TextStyle,
         },
         subscriptions,
         views::Action,
@@ -25,9 +26,11 @@ use crate::{
 
 use iced::{
     Alignment, Command, Length,
-    alignment::Horizontal,
-    widget::{button, column, container, image::Handle, row, text},
+    widget::{
+        button, column, container, image::Handle, progress_bar, row, scrollable, text,
+    },
 };
+use rust_i18n::t;
 use std::time::Duration;
 
 /// How long each background image stays up before rotating to the next one.
@@ -169,17 +172,30 @@ impl DefaultView {
             ..
         } = self;
 
-        let mut left_column =
-            column![].push(container(logo_panel_component.view()).height(Length::Fill));
-        if self.show_settings {
-            left_column = left_column.push(
-                container(settings_panel_component.view(active_profile))
+        // Logo and the game panel always keep their natural size, pinned to the top
+        // and bottom of the sidebar respectively. The space between them is the only
+        // flexible region: normally just an empty spacer, but when settings is open
+        // it holds the settings panel in a scrollable - so a tall settings panel
+        // scrolls internally instead of squeezing the logo or the Play button
+        // (see Matías's "se achica todo" report).
+        let middle: Element<'a, DefaultViewMessage> = if self.show_settings {
+            scrollable(settings_panel_component.view(active_profile))
+                .height(Length::Fill)
+                .into()
+        } else {
+            container(column![]).height(Length::Fill).into()
+        };
+
+        let mut left_column = column![]
+            .push(
+                container(logo_panel_component.view(!self.show_settings))
+                    .height(Length::Shrink),
+            )
+            .push(middle)
+            .push(
+                container(game_panel_component.view(active_profile))
                     .height(Length::Shrink),
             );
-        }
-        left_column = left_column.push(
-            container(game_panel_component.view(active_profile)).height(Length::Shrink),
-        );
         if let Some(message) = &self.toast {
             left_column = left_column.push(container(toast_banner(message)).padding(10));
         }
@@ -274,10 +290,14 @@ impl DefaultView {
                         DefaultViewMessage::Action,
                     ));
                     commands.push(Command::perform(async {}, move |_| {
-                        DefaultViewMessage::ShowToast(format!(
-                            "Launcher updated from v{old_version} to v{}",
-                            env!("CARGO_PKG_VERSION")
-                        ))
+                        DefaultViewMessage::ShowToast(
+                            t!(
+                                "default_view.toast_launcher_updated",
+                                old_version = old_version,
+                                new_version = env!("CARGO_PKG_VERSION")
+                            )
+                            .into_owned(),
+                        )
                     }));
                 }
 
@@ -463,102 +483,96 @@ impl DefaultView {
 fn launcher_update_dialog(
     state: &LauncherUpdateState,
 ) -> Element<'static, DefaultViewMessage> {
-    let (heading, body, action): (
-        &str,
-        String,
-        Option<Element<'static, DefaultViewMessage>>,
-    ) = match state {
-        LauncherUpdateState::Prompt(update) => (
-            "Launcher update required",
-            format!(
-                "A new version of the launcher ({}) is available. You need to update \
-                 before you can play or download the game.",
-                update.version
-            ),
-            Some(
-                button(
-                    text("Update now")
-                        .font(crate::assets::POPPINS_BOLD_FONT)
-                        .size(14),
-                )
-                .style(ButtonStyle::Download(DownloadButtonStyle::Update(
-                    ButtonState::Enabled,
-                )))
-                .padding([10, 24])
-                .on_press(DefaultViewMessage::LauncherUpdateConfirm)
-                .into(),
-            ),
-        ),
-        LauncherUpdateState::Applying(update) => (
-            "Updating the launcher...",
-            format!("Downloading and installing version {}.", update.version),
-            None,
-        ),
-        LauncherUpdateState::Failed(update, reason) => (
-            "Launcher update failed",
-            format!(
-                "Couldn't update to version {}: {reason}. Check your connection and try \
-                 again.",
-                update.version
-            ),
-            Some(
-                button(
-                    text("Retry")
-                        .font(crate::assets::POPPINS_BOLD_FONT)
-                        .size(14),
-                )
-                .style(ButtonStyle::Download(DownloadButtonStyle::Update(
-                    ButtonState::Enabled,
-                )))
-                .padding([10, 24])
-                .on_press(DefaultViewMessage::LauncherUpdateConfirm)
-                .into(),
-            ),
-        ),
-    };
-
-    let mut card = column![]
-        .align_items(Alignment::Center)
-        .spacing(16)
-        .padding(24)
-        .push(
-            text(heading)
-                .font(crate::assets::POPPINS_BOLD_FONT)
-                .size(20),
-        )
-        .push(
-            text(body)
-                .size(14)
-                .horizontal_alignment(Horizontal::Center)
-                .width(Length::Fixed(340.0)),
-        );
-    if let Some(action) = action {
-        card = card.push(action);
+    fn primary_action(label: impl ToString) -> Element<'static, DefaultViewMessage> {
+        button(text(label).font(crate::assets::POPPINS_BOLD_FONT).size(14))
+            .style(ButtonStyle::Primary)
+            .padding([10, 22])
+            .on_press(DefaultViewMessage::LauncherUpdateConfirm)
+            .into()
     }
 
-    container(
-        container(card)
-            .style(ContainerStyle::ModalDialog)
-            .width(Length::Fixed(380.0)),
-    )
-    .width(Length::Fill)
-    .height(Length::Fill)
-    .align_x(Horizontal::Center)
-    .align_y(iced::alignment::Vertical::Center)
-    .style(ContainerStyle::ModalBackdrop)
-    .into()
+    match state {
+        LauncherUpdateState::Prompt(update) => {
+            let body = text(t!("default_view.launcher_update_body"))
+                .size(14)
+                .style(TextStyle::Secondary)
+                .into();
+            modal_shell(
+                GOLD_500,
+                t!("default_view.launcher_update_eyebrow"),
+                t!(
+                    "default_view.launcher_update_title",
+                    version = update.version
+                ),
+                body,
+                Some(primary_action(t!("default_view.launcher_update_confirm"))),
+            )
+        },
+        LauncherUpdateState::Applying(update) => {
+            let body = column![]
+                .spacing(16)
+                .push(
+                    text(t!(
+                        "default_view.launcher_update_applying_body",
+                        version = update.version
+                    ))
+                    .size(14)
+                    .style(TextStyle::Secondary),
+                )
+                .push(progress_bar(0.0..=100.0, 100.0).height(Length::Fixed(6.0)))
+                .into();
+            modal_shell(
+                ARCANE_500,
+                t!("default_view.launcher_update_applying_eyebrow"),
+                t!("default_view.launcher_update_applying_title"),
+                body,
+                None,
+            )
+        },
+        LauncherUpdateState::Failed(update, reason) => {
+            let body = column![]
+                .spacing(12)
+                .push(
+                    text(t!("default_view.launcher_update_failed_body"))
+                        .size(14)
+                        .style(TextStyle::Secondary),
+                )
+                .push(
+                    container(text(reason.clone()).size(12).style(TextStyle::Danger))
+                        .style(ContainerStyle::ErrorCallout)
+                        .padding([10, 12]),
+                )
+                .into();
+            modal_shell(
+                CRIMSON_500,
+                t!("default_view.launcher_update_failed_eyebrow"),
+                t!(
+                    "default_view.launcher_update_failed_title",
+                    version = update.version
+                ),
+                body,
+                Some(primary_action(t!("default_view.launcher_update_retry"))),
+            )
+        },
+    }
 }
 
 /// A brief, non-blocking "updated successfully" notice - unlike the modals above,
 /// this is just an extra row in the normal layout, not a full-window overlay.
 fn toast_banner(message: &str) -> Element<'_, DefaultViewMessage> {
     container(
-        text(message)
-            .size(12)
-            .horizontal_alignment(Horizontal::Center)
-            .width(Length::Fill),
+        row![]
+            .spacing(10)
+            .align_items(Alignment::Center)
+            .push(
+                container(text(""))
+                    .width(Length::Fixed(8.0))
+                    .height(Length::Fixed(8.0))
+                    .style(ContainerStyle::StatusDot(crate::gui::style::SUCCESS_TEXT)),
+            )
+            .push(text(message).size(13).style(TextStyle::Primary)),
     )
-    .padding(8)
+    .padding([10, 14])
     .width(Length::Fill)
     .style(ContainerStyle::Toast)
     .into()

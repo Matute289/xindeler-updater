@@ -48,6 +48,9 @@ iced = { version = "0.12.1", features = [
     "advanced",
 ] }
 rfd = "0.17.2"
+# i18n: locale files live in client/locales/, loaded at compile time by the
+# `rust_i18n::i18n!` macro in main.rs. English is the fallback.
+rust-i18n = "3"
 
 # Logging
 tracing = { workspace = true }

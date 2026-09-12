@@ -28,6 +28,7 @@ use iced::{
         text, text_input, tooltip, tooltip::Position,
     },
 };
+use rust_i18n::t;
 use tracing::debug;
 
 #[derive(Clone, Debug)]
@@ -45,6 +46,7 @@ pub enum SettingsPanelMessage {
     ChannelsLoaded(Result<Channels>),
     AutoUpdateGameToggled(bool),
     AutoUpdateLauncherToggled(bool),
+    LanguageChanged(profiles::Language),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -138,7 +140,7 @@ impl SettingsPanelComponent {
             SettingsPanelMessage::AssetsOverridePick => Some(Command::perform(
                 async {
                     rfd::AsyncFileDialog::new()
-                        .set_title("Select a folder where your asset overrides live")
+                        .set_title(t!("settings.assets_override_dialog_title"))
                         .pick_folder()
                         .await
                         .map(|folder| folder.path().to_path_buf())
@@ -181,6 +183,18 @@ impl SettingsPanelComponent {
                     DefaultViewMessage::Action,
                 ))
             },
+            SettingsPanelMessage::LanguageChanged(new_language) => {
+                let mut profile = active_profile.clone();
+                profile.language = new_language;
+                // Applied immediately rather than waiting for the profile round-trip,
+                // so the re-render this message triggers is already in the new
+                // language - switching languages must not need a restart.
+                rust_i18n::set_locale(new_language.code());
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
+            },
             SettingsPanelMessage::ChannelsLoaded(result) => {
                 if let Ok(channels) = result {
                     debug!(?channels, "Fetched available channels:");
@@ -197,14 +211,47 @@ impl SettingsPanelComponent {
         active_profile: &'a Profile,
     ) -> Element<'a, DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
-        const FONT_SIZE: u16 = 12;
+        const FONT_SIZE: u16 = 13;
+
+        let language_picker = column![]
+            .spacing(5)
+            .push(container(
+                text(t!("settings.language_label"))
+                    .size(10)
+                    .style(TextStyle::Muted),
+            ))
+            .push(
+                tooltip(
+                    container(
+                        pick_list(
+                            profiles::LANGUAGES,
+                            Some(active_profile.language),
+                            |x| {
+                                DefaultViewMessage::SettingsPanel(
+                                    SettingsPanelMessage::LanguageChanged(x),
+                                )
+                            },
+                        )
+                        .text_size(FONT_SIZE)
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
+                    )
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.language_tooltip")).size(14),
+                    Position::Bottom,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(1));
 
         let graphics_device = column![]
             .spacing(5)
-            .push(
-                container(text("GRAPHICS DEVICE").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text(t!("settings.graphics_device_label"))
+                    .size(10)
+                    .style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -221,12 +268,8 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text(
-                        "The graphics device that the game will use. \nLeave on Auto \
-                         unless you are experiencing issues",
-                    )
-                    .size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.graphics_device_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -236,10 +279,11 @@ impl SettingsPanelComponent {
 
         let graphics_mode = column![]
             .spacing(5)
-            .push(
-                container(text("GRAPHICS MODE").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text(t!("settings.graphics_mode_label"))
+                    .size(10)
+                    .style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -256,12 +300,8 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text(
-                        "The rendering backend that the game will use.\nLeave on Auto \
-                         unless you are experiencing issues",
-                    )
-                    .size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.graphics_mode_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -274,10 +314,11 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(text("LOG LEVEL").size(10).style(TextStyle::LightGrey))
-                            .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text(t!("settings.log_level_label"))
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
                     .push(
                         container(
                             button(
@@ -311,12 +352,8 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text(
-                        "Changes the amount of information that the game outputs to its \
-                         log file",
-                    )
-                    .size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.log_level_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -326,10 +363,11 @@ impl SettingsPanelComponent {
 
         let server_picker = column![]
             .spacing(5)
-            .push(
-                container(text("SERVER").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text(t!("settings.server_label"))
+                    .size(10)
+                    .style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -342,8 +380,8 @@ impl SettingsPanelComponent {
                         .padding(PICK_LIST_PADDING)
                         .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text("The download server used for game downloads").size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.server_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -359,12 +397,11 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(
-                            text("ASSETS OVERRIDE").size(10).style(TextStyle::LightGrey),
-                        )
-                        .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text(t!("settings.assets_override_label"))
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
                     .push(help_link_button(help_link)),
             )
             .push(
@@ -372,7 +409,7 @@ impl SettingsPanelComponent {
                     container(
                         row![
                             text_input(
-                                "/path/to/asset/folder/with/overrides",
+                                &t!("settings.assets_override_placeholder"),
                                 active_profile
                                     .assets_override
                                     .as_deref()
@@ -399,9 +436,8 @@ impl SettingsPanelComponent {
                         .spacing(5)
                         .align_items(Alignment::Center),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text("Folder where you can put modified assets for testing or fun!")
-                        .size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.assets_override_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(
@@ -419,14 +455,11 @@ impl SettingsPanelComponent {
             .push(
                 row![]
                     .spacing(5)
-                    .push(
-                        container(
-                            text("ENVIRONMENT VARIABLES")
-                                .size(10)
-                                .style(TextStyle::LightGrey),
-                        )
-                        .padding([0, 0, 0, 3]),
-                    )
+                    .push(container(
+                        text(t!("settings.env_vars_label"))
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
                     .push(help_link_button(help_link)),
             )
             .push(
@@ -441,8 +474,8 @@ impl SettingsPanelComponent {
                             .padding(PICK_LIST_PADDING)
                             .size(FONT_SIZE),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text("Environment variables set when running Voxygen").size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.env_vars_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -452,10 +485,11 @@ impl SettingsPanelComponent {
 
         let channel_picker = column![]
             .spacing(5)
-            .push(
-                container(text("CHANNEL").size(10).style(TextStyle::LightGrey))
-                    .padding([0, 0, 0, 3]),
-            )
+            .push(container(
+                text(t!("settings.channel_label"))
+                    .size(10)
+                    .style(TextStyle::Muted),
+            ))
             .push(
                 tooltip(
                     container(
@@ -472,8 +506,8 @@ impl SettingsPanelComponent {
                         .text_size(FONT_SIZE)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Fixed(30.0)),
-                    text("The download channel used for game downloads").size(14),
+                    .height(Length::Fixed(32.0)),
+                    text(t!("settings.channel_tooltip")).size(14),
                     Position::Bottom,
                 )
                 .style(ContainerStyle::Tooltip)
@@ -481,73 +515,145 @@ impl SettingsPanelComponent {
             )
             .width(Length::FillPortion(1));
 
-        let first_row = container(
-            row![]
-                .spacing(10)
-                .align_items(Alignment::End)
-                .push(graphics_device),
-        );
+        let game_version = active_profile
+            .version
+            .clone()
+            .unwrap_or_else(|| t!("settings.version_not_installed").into_owned());
+        let launcher_version = format!("v{}", env!("CARGO_PKG_VERSION"));
 
-        let second_row = container(
+        let versions_row = row![]
+            .spacing(12)
+            .push(
+                column![]
+                    .spacing(5)
+                    .push(container(
+                        text(t!("settings.game_version_label"))
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
+                    .push(text(game_version).size(FONT_SIZE))
+                    .width(Length::FillPortion(1)),
+            )
+            .push(
+                column![]
+                    .spacing(5)
+                    .push(container(
+                        text(t!("settings.launcher_version_label"))
+                            .size(10)
+                            .style(TextStyle::Muted),
+                    ))
+                    .push(text(launcher_version).size(FONT_SIZE))
+                    .width(Length::FillPortion(1)),
+            );
+
+        let general_section = column![]
+            .spacing(12)
+            .push(section_label(&t!("settings.section_general")))
+            .push(row![].push(language_picker))
+            .push(versions_row);
+
+        let mut graphics_section = column![]
+            .spacing(12)
+            .push(section_label(&t!("settings.section_graphics")));
+        // Device/backend detection needs to ask the installed game binary what it
+        // supports - before that, these two only offer "Auto" (see
+        // docs/design/gpu-detection-feasibility.md). Only worth explaining while
+        // it's actually true.
+        if !active_profile.installed() {
+            graphics_section = graphics_section.push(
+                text(t!("settings.graphics_auto_only_note"))
+                    .size(11)
+                    .style(TextStyle::Muted),
+            );
+        }
+        graphics_section = graphics_section.push(row![].push(graphics_device)).push(
             row![]
-                .spacing(10)
+                .spacing(12)
                 .align_items(Alignment::End)
                 .push(graphics_mode)
-                .push(log_level)
-                .push(server_picker),
+                .push(log_level),
         );
 
-        let third_row = container(row![].spacing(10).push(env_vars).push(channel_picker));
-
-        let fourth_row =
-            container(row![].align_items(Alignment::End).push(assets_override));
-
-        let auto_update = column![]
-            .spacing(5)
+        let game_section = column![]
+            .spacing(12)
+            .push(section_label(&t!("settings.section_game")))
             .push(
-                checkbox("Auto-update game", active_profile.auto_update_game)
+                row![]
+                    .spacing(12)
+                    .align_items(Alignment::End)
+                    .push(server_picker)
+                    .push(channel_picker),
+            )
+            .push(row![].align_items(Alignment::End).push(assets_override));
+
+        let advanced_section = column![]
+            .spacing(12)
+            .push(section_label(&t!("settings.section_advanced")))
+            .push(row![].push(env_vars));
+
+        let auto_update_card = container(
+            column![]
+                .spacing(8)
+                .push(
+                    checkbox(
+                        t!("settings.auto_update_game_label"),
+                        active_profile.auto_update_game,
+                    )
                     .style(CheckboxStyle::Default)
+                    .size(18)
+                    .spacing(10)
                     .text_size(FONT_SIZE)
                     .on_toggle(|enabled| {
                         DefaultViewMessage::SettingsPanel(
                             SettingsPanelMessage::AutoUpdateGameToggled(enabled),
                         )
                     }),
-            )
-            .push(
-                checkbox("Auto-update launcher", active_profile.auto_update_launcher)
+                )
+                .push(
+                    checkbox(
+                        t!("settings.auto_update_launcher_label"),
+                        active_profile.auto_update_launcher,
+                    )
                     .style(CheckboxStyle::Default)
+                    .size(18)
+                    .spacing(10)
                     .text_size(FONT_SIZE)
                     .on_toggle(|enabled| {
                         DefaultViewMessage::SettingsPanel(
                             SettingsPanelMessage::AutoUpdateLauncherToggled(enabled),
                         )
                     }),
-            )
-            .push(
-                text(
-                    "When on, a new version downloads and installs automatically - no \
-                     confirmation prompt, just a quick notice once it's done.",
                 )
-                .size(10)
-                .style(TextStyle::LightGrey),
-            );
-
-        let fifth_row = container(row![].push(auto_update));
+                .push(
+                    text(t!("settings.auto_update_note"))
+                        .size(11)
+                        .style(TextStyle::Muted),
+                ),
+        )
+        .style(ContainerStyle::Card)
+        .padding([12, 14])
+        .width(Length::Fill);
 
         let col = column![]
-            .spacing(10)
-            .push(first_row)
-            .push(second_row)
-            .push(third_row)
-            .push(fourth_row)
-            .push(fifth_row);
+            .spacing(20)
+            .push(general_section)
+            .push(graphics_section)
+            .push(game_section)
+            .push(advanced_section)
+            .push(auto_update_card);
 
         column![]
-            .push(heading_with_rule("Settings"))
-            .push(container(col).padding([40, 10]).height(Length::Shrink))
+            .push(heading_with_rule(t!("settings.heading")))
+            .push(container(col).padding([16, 20]).height(Length::Shrink))
             .into()
     }
+}
+
+fn section_label<'a>(label: &str) -> Element<'a, DefaultViewMessage> {
+    text(label.to_uppercase())
+        .size(10)
+        .style(TextStyle::Muted)
+        .into()
 }
 
 fn help_link_button(url: String) -> Element<'static, DefaultViewMessage> {
