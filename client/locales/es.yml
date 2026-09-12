@@ -90,6 +90,8 @@ changelog_panel:
   heading: "Últimas notas del parche"
   recent_changes_button: "Cambios recientes"
   nightly_version: "Nightly"
+  load_error: "No pudimos cargar las notas del parche"
+  retry_button: "Reintentar"
 
 # client/src/gui/components/news_panel.rs
 news_panel:

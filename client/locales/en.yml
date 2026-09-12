@@ -89,6 +89,8 @@ changelog_panel:
   heading: "Latest Patch Notes"
   recent_changes_button: "Recent Changes"
   nightly_version: "Nightly"
+  load_error: "Couldn't load the patch notes"
+  retry_button: "Retry"
 
 # client/src/gui/components/news_panel.rs
 news_panel:
