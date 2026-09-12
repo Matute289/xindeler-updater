@@ -89,16 +89,23 @@ pub enum WgpuBackend {
     Vulkan,
 }
 
+// Kept in sync with the game's own hardcoded list (xindeler-new-horizon,
+// voxygen/src/main.rs's ListWgpuBackends) - it doesn't query anything either, and this
+// is only the pre-install fallback shown before the launcher can ask the real game
+// binary. DX11 is deliberately absent: wgpu dropped that backend in 0.19, and the game
+// doesn't parse "dx11" either (falls through to its own default) - so it was a
+// selectable option here that silently did nothing.
 #[cfg(target_os = "windows")]
 static WGPU_BACKENDS: &[WgpuBackend] = &[
     WgpuBackend::Auto,
-    WgpuBackend::DX11,
+    WgpuBackend::OpenGl,
     WgpuBackend::DX12,
     WgpuBackend::Vulkan,
 ];
 
 #[cfg(target_os = "linux")]
-static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
+static WGPU_BACKENDS: &[WgpuBackend] =
+    &[WgpuBackend::Auto, WgpuBackend::OpenGl, WgpuBackend::Vulkan];
 
 #[cfg(target_os = "macos")]
 static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
