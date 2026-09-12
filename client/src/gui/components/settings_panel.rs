@@ -473,18 +473,13 @@ impl SettingsPanelComponent {
         // it's actually true.
         if !active_profile.installed() {
             graphics_section = graphics_section.push(
-                row![]
-                    .spacing(6)
-                    .push(text("ⓘ").size(11).style(TextStyle::Accent))
-                    .push(
-                        text(
-                            "Limited to Auto until the game is installed and has run \
-                             once - that's what lets it report your real GPU and \
-                             supported rendering backends.",
-                        )
-                        .size(11)
-                        .style(TextStyle::Muted),
-                    ),
+                text(
+                    "Limited to Auto until the game is installed and has run once - \
+                     that's what lets it report your real GPU and supported \
+                     rendering backends.",
+                )
+                .size(11)
+                .style(TextStyle::Muted),
             );
         }
         graphics_section = graphics_section.push(row![].push(graphics_device)).push(
