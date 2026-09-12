@@ -83,6 +83,14 @@ jobs:
         with:
           shared-key: linux-${{ matrix.arch }}
 
+      # client/Cargo.toml pulls xindeler-query-server from the private
+      # xindeler-new-horizon repo over SSH - same read-only deploy key pattern
+      # xindeler-web-api uses for its own private git dependency.
+      - name: Authorize access to the private xindeler-query-server dependency
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.XINDELER_NEW_HORIZON_DEPLOY_KEY }}
+
       - name: Build
         run: cargo build --release -p xindeler-updater
 
@@ -132,6 +140,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: macos-${{ matrix.arch }}
+
+      # See the linux job's identical step for why this is needed.
+      - name: Authorize access to the private xindeler-query-server dependency
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.XINDELER_NEW_HORIZON_DEPLOY_KEY }}
 
       - name: Build
         run: cargo build --release -p xindeler-updater --target ${{ matrix.target }}
@@ -221,6 +235,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: windows-x86_64
+
+      # See the linux job's identical step for why this is needed. webfactory/ssh-agent
+      # supports Windows runners too (uses Git for Windows' bundled ssh-agent).
+      - name: Authorize access to the private xindeler-query-server dependency
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.XINDELER_NEW_HORIZON_DEPLOY_KEY }}
 
       - name: Build
         # bundled = openssl-sys/vendored - client/Cargo.toml's own comment says this
