@@ -16,10 +16,15 @@ use iced::{
 pub struct LogoPanelComponent {}
 
 impl LogoPanelComponent {
-    pub fn view(&self) -> Element<'_, DefaultViewMessage> {
-        let col = column![]
-            .push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())))
-            .push(
+    /// `show_links` is false while Settings is open - the sidebar has no room for
+    /// both, and the logo staying visible matters more than the nav links (Matías:
+    /// "Settings tiene que tapar las 3 URLs esas, el Xindeler que se siga viendo").
+    pub fn view(&self, show_links: bool) -> Element<'_, DefaultViewMessage> {
+        let mut col =
+            column![].push(Image::new(Handle::from_memory(XINDELER_LOGO.to_vec())));
+
+        if show_links {
+            col = col.push(
                 container(
                     column![]
                         .spacing(2)
@@ -43,6 +48,7 @@ impl LogoPanelComponent {
                 )
                 .padding([32, 0, 0, 0]),
             );
+        }
 
         let container: Container<'_, DefaultViewMessage> = container(col).padding(20);
         container.into()

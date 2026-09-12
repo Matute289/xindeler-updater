@@ -186,7 +186,10 @@ impl DefaultView {
         };
 
         let mut left_column = column![]
-            .push(container(logo_panel_component.view()).height(Length::Shrink))
+            .push(
+                container(logo_panel_component.view(!self.show_settings))
+                    .height(Length::Shrink),
+            )
             .push(middle)
             .push(
                 container(game_panel_component.view(active_profile))
