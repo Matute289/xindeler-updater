@@ -11,7 +11,7 @@ use crate::{
         components::GamePanelMessage,
         custom_widgets::modal_shell,
         style::{
-            ARCANE_500,
+            ARCANE_500, SUCCESS_TEXT,
             button::{BrowserButtonStyle, ButtonStyle, ServerListEntryButtonState},
             container::ContainerStyle,
             text::TextStyle,
@@ -39,8 +39,8 @@ use rust_i18n::t;
 use std::{borrow::Cow, cmp::min, collections::HashMap, time::Duration};
 use tracing::debug;
 use url::Url;
-use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
 use veloren_serverbrowser_api::{FieldContent, GameServer};
+use xindeler_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
 
 pub const SERVER_BROWSER_PING_REFRESH: Duration = Duration::from_secs(20);
 
@@ -51,17 +51,24 @@ pub struct ServerBrowserEntry {
     server_info: Option<QueryServerInfo>,
     query_client: SkipDebugClone<Option<QueryClient>>,
     source: ServerEntrySource,
+    /// Whether the `Identity` query confirmed this is actually a Xindeler server (see
+    /// `xindeler_query_server::proto::ServerIdentity`), as opposed to vanilla Veloren
+    /// or an unrelated fork that merely speaks the same base protocol. Only
+    /// meaningful for `Custom` entries - always `false` for `Official` ones (the
+    /// curated list is trusted by construction, no need to re-check). Not persisted:
+    /// re-derived every time `RefreshPing` pings this entry (every
+    /// `SERVER_BROWSER_PING_REFRESH`), so a custom server added before this check
+    /// existed - or loaded fresh at startup - gets (re)confirmed within one refresh
+    /// cycle instead of staying stuck on a stale flag.
+    verified: bool,
 }
 
 /// Where a `ServerBrowserEntry` came from - the curated list fetched from
 /// `OFFICIAL_SERVER_LIST`, or typed in by the player. Only `Custom` entries are
-/// removable and get the "unverified" badge - see Matías's request to let players
-/// add a server by IP/DNS name, plus his concern about accidentally connecting to a
-/// vanilla Veloren server or an unrelated fork. Today this can only confirm the
-/// address speaks the query-server protocol at all (see `AddCustomServerSubmit`);
-/// confirming it's specifically a Xindeler-compatible build needs a protocol-level
-/// identity field that doesn't exist yet (tracked separately with the
-/// xindeler-new-horizon side).
+/// removable, editable, and carry a `verified` flag - see Matías's request to let
+/// players add a server by IP/DNS name, plus his concern about accidentally
+/// connecting to a vanilla Veloren server or an unrelated fork. `verified` is set via
+/// the `Identity` query added in xindeler-new-horizon PR #313.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum ServerEntrySource {
     #[default]
@@ -91,6 +98,7 @@ impl From<GameServer> for ServerBrowserEntry {
             server_info: None,
             query_client: SkipDebugClone(None),
             source: ServerEntrySource::Official,
+            verified: false,
         }
     }
 }
@@ -105,6 +113,10 @@ pub enum ServerBrowserPanelMessage {
         server_info: Option<QueryServerInfo>,
         ping: Option<Duration>,
         query_client: SkipDebugClone<Option<QueryClient>>,
+        /// `Some` only for `Custom` entries that got a successful ping (see
+        /// `RefreshPing`'s handler) - whether the `Identity` query confirmed this is
+        /// a real Xindeler server.
+        verified: Option<bool>,
     },
     SortServers(ServerSortOrder),
     ShowAddServerForm,
@@ -117,10 +129,12 @@ pub enum ServerBrowserPanelMessage {
     AddCustomServerPortChanged(String),
     AddCustomServerCancelled,
     AddCustomServerSubmit,
-    /// Result of pinging the typed address via the query-server protocol - `Some`
-    /// means it answered (so it's at least a Veloren-family game server), `None`
-    /// means it didn't respond at all.
-    AddCustomServerValidated(Option<QueryServerInfo>),
+    /// Result of pinging the typed address via the query-server protocol and, if
+    /// that succeeded, following up with an `Identity` check - `Some((info,
+    /// verified))` means it answered (so it's at least a Veloren-family game
+    /// server), with `verified` saying whether `Identity` confirmed it's
+    /// specifically Xindeler. `None` means it didn't respond at all.
+    AddCustomServerValidated(Option<(QueryServerInfo, bool)>),
     RemoveCustomServer {
         address: String,
         port: u16,
@@ -395,14 +409,24 @@ impl ServerBrowserPanelComponent {
             if server_entry.source == ServerEntrySource::Custom {
                 // A text badge here doesn't fit `ICON_COLUMN_WIDTH` and bleeds into
                 // the name column, so this reuses the same small status-dot pattern
-                // `modal_shell`'s eyebrow uses instead of trying to fit a word.
+                // `modal_shell`'s eyebrow uses instead of trying to fit a word. Color
+                // and tooltip both depend on whether `Identity` confirmed this is
+                // actually Xindeler (see `RefreshPing`/`AddCustomServerValidated`).
+                let (dot_color, dot_tooltip) = if server_entry.verified {
+                    (
+                        SUCCESS_TEXT,
+                        "server_browser_panel.custom_server_verified_tooltip",
+                    )
+                } else {
+                    (ARCANE_500, "server_browser_panel.custom_server_tooltip")
+                };
                 status_icons = status_icons.push(
                     tooltip(
                         container(text(""))
                             .width(Length::Fixed(8.0))
                             .height(Length::Fixed(8.0))
-                            .style(ContainerStyle::StatusDot(ARCANE_500)),
-                        text(t!("server_browser_panel.custom_server_tooltip")).size(14),
+                            .style(ContainerStyle::StatusDot(dot_color)),
+                        text(t!(dot_tooltip)).size(14),
                         Position::Right,
                     )
                     .style(ContainerStyle::Tooltip)
@@ -700,13 +724,13 @@ impl ServerBrowserPanelComponent {
                             let queried_info =
                                 if let Some(query_info) = &server.server_info {
                                     let battlemode = match query_info.battlemode {
-                                        veloren_query_server::proto::ServerBattleMode::GlobalPvP => {
+                                        xindeler_query_server::proto::ServerBattleMode::GlobalPvP => {
                                             t!("server_browser_panel.battlemode_global_pvp")
                                         },
-                                        veloren_query_server::proto::ServerBattleMode::GlobalPvE => {
+                                        xindeler_query_server::proto::ServerBattleMode::GlobalPvE => {
                                             t!("server_browser_panel.battlemode_global_pve")
                                         },
-                                        veloren_query_server::proto::ServerBattleMode::PerPlayer => {
+                                        xindeler_query_server::proto::ServerBattleMode::PerPlayer => {
                                             t!("server_browser_panel.battlemode_per_player")
                                         },
                                     };
@@ -925,6 +949,7 @@ impl ServerBrowserPanelComponent {
                 server_info,
                 ping,
                 query_client,
+                verified,
             } => {
                 debug!(?ping, ?server_address, "Received ping result for server");
 
@@ -936,6 +961,9 @@ impl ServerBrowserPanelComponent {
                     server.ping = ping;
                     server.server_info = server_info;
                     server.query_client = query_client;
+                    if let Some(verified) = verified {
+                        server.verified = verified;
+                    }
                 };
 
                 self.sort_servers(self.last_sort_ordering.unwrap_or_default());
@@ -948,6 +976,9 @@ impl ServerBrowserPanelComponent {
                     let query_port = server.server.query_port?;
                     let server_address = server.server.address.clone();
                     let server_address2 = server.server.address.clone();
+                    // Only custom entries need re-confirming they're actually
+                    // Xindeler - the curated list is trusted by construction.
+                    let is_custom = server.source == ServerEntrySource::Custom;
 
                     Some(Command::perform(
                         async move {
@@ -965,11 +996,21 @@ impl ServerBrowserPanelComponent {
 
                             let res =
                                 crate::net::ping::perform_ping(&mut query_client).await;
-                            Some((res, query_client))
+                            let verified = if is_custom && res.is_ok() {
+                                Some(
+                                    crate::net::ping::perform_identity_check(
+                                        &mut query_client,
+                                    )
+                                    .await,
+                                )
+                            } else {
+                                None
+                            };
+                            Some((res, verified, query_client))
                         },
                         move |res| {
-                            let (query_client, server_info, ping) =
-                                if let Some((res, query_client)) = res {
+                            let (query_client, server_info, ping, verified) =
+                                if let Some((res, verified, query_client)) = res {
                                     let (ping, server_info) = res
                                         .inspect_err(|error| {
                                             debug!(
@@ -981,9 +1022,9 @@ impl ServerBrowserPanelComponent {
                                         .map_or((None, None), |(info, ping)| {
                                             (Some(info), Some(ping))
                                         });
-                                    (Some(query_client), server_info, ping)
+                                    (Some(query_client), server_info, ping, verified)
                                 } else {
-                                    (None, None, None)
+                                    (None, None, None, None)
                                 };
 
                             DefaultViewMessage::ServerBrowserPanel(
@@ -992,6 +1033,7 @@ impl ServerBrowserPanelComponent {
                                     server_info,
                                     ping,
                                     query_client: SkipDebugClone(query_client),
+                                    verified,
                                 },
                             )
                         },
@@ -1091,14 +1133,15 @@ impl ServerBrowserPanelComponent {
                             net::DEFAULT_QUERY_PORT,
                         )
                         .await?;
-                        crate::net::ping::perform_ping(&mut client)
-                            .await
-                            .ok()
-                            .map(|(_ping, info)| info)
+                        let (_ping, info) =
+                            crate::net::ping::perform_ping(&mut client).await.ok()?;
+                        let verified =
+                            crate::net::ping::perform_identity_check(&mut client).await;
+                        Some((info, verified))
                     },
-                    |info| {
+                    |result| {
                         DefaultViewMessage::ServerBrowserPanel(
-                            ServerBrowserPanelMessage::AddCustomServerValidated(info),
+                            ServerBrowserPanelMessage::AddCustomServerValidated(result),
                         )
                     },
                 ))
@@ -1109,8 +1152,8 @@ impl ServerBrowserPanelComponent {
                 };
 
                 match info {
-                    Some(info) => {
-                        debug!(?info, "Validated custom server, saving it");
+                    Some((info, verified)) => {
+                        debug!(?info, verified, "Validated custom server, saving it");
 
                         let address = form.address.trim().to_owned();
                         let port = form
@@ -1162,6 +1205,7 @@ impl ServerBrowserPanelComponent {
 
                         self.servers.push(ServerBrowserEntry {
                             source: ServerEntrySource::Custom,
+                            verified,
                             ..ServerBrowserEntry::from(game_server)
                         });
                         self.sort_servers(self.last_sort_ordering.unwrap_or_default());

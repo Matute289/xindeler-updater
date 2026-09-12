@@ -133,6 +133,7 @@ server_browser_panel:
   add_server_error_port: "Eso no parece un puerto válido"
   add_server_error_unreachable: "No pudimos encontrar un servidor de juego en esa dirección"
   custom_server_tooltip: "Lo agregaste vos - solo pudimos confirmar que responde al protocolo de red de Veloren/Xindeler, no que sea específicamente un servidor compatible con Xindeler. Conectate bajo tu propio riesgo."
+  custom_server_verified_tooltip: "Lo agregaste vos - confirmamos que es un servidor Xindeler de verdad."
   edit_server_tooltip: "Editar"
   remove_server_tooltip: "Eliminar"
 

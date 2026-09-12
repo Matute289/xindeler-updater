@@ -132,6 +132,7 @@ server_browser_panel:
   add_server_error_port: "That doesn't look like a valid port"
   add_server_error_unreachable: "Couldn't reach a game server at that address"
   custom_server_tooltip: "Added manually - we could only confirm this speaks the Veloren/Xindeler network protocol, not that it's specifically a Xindeler-compatible server. Connect at your own risk."
+  custom_server_verified_tooltip: "Added manually - confirmed to be a real Xindeler server."
   edit_server_tooltip: "Edit"
   remove_server_tooltip: "Remove"
 
