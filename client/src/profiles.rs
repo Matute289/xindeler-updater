@@ -436,7 +436,13 @@ impl Profile {
                 };
             }
         } else {
-            self.supported_wgpu_backends = Vec::new();
+            // Nothing installed yet to actually ask, so there's no real list to
+            // query - but the Settings dropdown still needs *something* selectable
+            // (previously this was an empty Vec, leaving the dropdown with nothing
+            // to pick even though it displays "Auto" as the current value). Same
+            // static per-OS fallback query_wgpu_backends() itself falls back to when
+            // the game binary exists but fails to answer.
+            self.supported_wgpu_backends = WGPU_BACKENDS.to_vec();
         }
     }
 
@@ -452,7 +458,7 @@ impl Profile {
                 self.wgpu_device = WgpuDevice::Auto
             }
         } else {
-            self.supported_wgpu_devices = Vec::new();
+            self.supported_wgpu_devices = vec![WgpuDevice::Auto];
         }
     }
 }
