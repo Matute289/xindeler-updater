@@ -30,7 +30,12 @@ bundled_font = []
 
 [dependencies]
 veloren-serverbrowser-api = "0.4.0"
-veloren-query-server = { version = "0.1.2", default-features = false, features = [
+# xindeler-new-horizon's own fork of the query-server protocol - switched from the
+# upstream crates.io `veloren-query-server` so we can use the `Identity` request it
+# added (NH query-server-identity, PR #313) to confirm a manually-added server is
+# actually running Xindeler rather than vanilla Veloren or an unrelated fork. Pinned
+# to a commit rather than a branch for reproducible builds; bump deliberately.
+xindeler-query-server = { package = "xindeler-query-server", git = "ssh://git@github.com/Matute289/xindeler-new-horizon.git", rev = "22f6e55abccf8fe501a69b37152035cff12a72f2", default-features = false, features = [
     "client",
 ] }
 
@@ -134,3 +139,10 @@ winresource = "0.1.15"
 
 [dev-dependencies]
 tempfile = "3"
+# Enables the `server` feature on top of `xindeler-query-server` above (same git
+# source, unified by Cargo), only for tests - lets `net::ping`'s tests spin up a real
+# `QueryServer` to verify the `Identity` check end-to-end instead of trusting the
+# crate's own examples alone.
+xindeler-query-server = { package = "xindeler-query-server", git = "ssh://git@github.com/Matute289/xindeler-new-horizon.git", rev = "22f6e55abccf8fe501a69b37152035cff12a72f2", default-features = false, features = [
+    "server",
+] }

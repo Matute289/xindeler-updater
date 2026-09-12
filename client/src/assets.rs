@@ -35,6 +35,8 @@ pub const PING_ERROR_ICON: &[u8] = include_bytes!("../assets/icons/ping_error.pn
 pub const PING_NONE_ICON: &[u8] = include_bytes!("../assets/icons/ping_none.png");
 pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
 pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
+pub const TRASH_ICON: &[u8] = include_bytes!("../assets/icons/trash.png");
+pub const PENCIL_ICON: &[u8] = include_bytes!("../assets/icons/pencil.png");
 
 // Fonts
 /// A font to be used for text that can be used to display user provided text such as
