@@ -1,8 +1,7 @@
 use crate::{
     Result,
     assets::{
-        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
-        UP_RIGHT_ARROW_ICON,
+        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::RECENT_CHANGES_URL,
@@ -30,6 +29,7 @@ use ron::{
     de::from_str,
     ser::{PrettyConfig, to_string_pretty},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -39,6 +39,7 @@ pub enum ChangelogPanelMessage {
     LoadChangelog(Result<ChangelogPanelComponent>),
     UpdateChangelog(Result<Option<ChangelogPanelComponent>>),
     SaveChangelog,
+    RetryLoad,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +50,12 @@ pub struct ChangelogPanelComponent {
     pub etag: String,
     #[serde(skip, default = "default_display_count")]
     pub display_count: usize,
+    /// Set when there's genuinely nothing to show (no cache, and the fetch - retries
+    /// included - never succeeded), so the panel can say so instead of silently
+    /// rendering blank. Never set while `versions` is non-empty - a background
+    /// update-check failing shouldn't hide content that's already displayed fine.
+    #[serde(skip)]
+    pub load_failed: bool,
 }
 
 pub fn default_display_count() -> usize {
@@ -66,13 +73,39 @@ impl ChangelogPanelComponent {
         })
     }
 
+    /// raw.githubusercontent.com has been observed returning transient 5xx errors
+    /// (a Varnish "Backend.max_conn reached" page) - retried a few times with a
+    /// short delay before giving up, rather than the single attempt this used to
+    /// make.
+    const FETCH_ATTEMPTS: u32 = 3;
+    const FETCH_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(500);
+
+    async fn fetch_changelog_response(url: &str) -> Result<reqwest::Response> {
+        let mut last_error = None;
+        for attempt in 1..=Self::FETCH_ATTEMPTS {
+            match net::query(url).await {
+                Ok(response) => return Ok(response),
+                Err(e) => {
+                    debug!(?e, attempt, url, "Changelog fetch attempt failed");
+                    last_error = Some(e);
+                    if attempt < Self::FETCH_ATTEMPTS {
+                        tokio::time::sleep(Self::FETCH_RETRY_DELAY).await;
+                    }
+                },
+            }
+        }
+        Err(last_error.expect("loop always sets this before exiting without returning"))
+    }
+
     #[allow(clippy::while_let_on_iterator)]
     async fn fetch() -> Result<Option<Self>> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
 
         let changelog_ref = Self::changelog_ref().await;
-        let changelog =
-            net::query(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?;
+        let changelog = Self::fetch_changelog_response(
+            &consts::CHANGELOG_URL.replace("{tag}", &changelog_ref),
+        )
+        .await?;
         let etag = net::get_etag(&changelog);
 
         let changelog_text = changelog.text().await?;
@@ -113,8 +146,10 @@ impl ChangelogPanelComponent {
                     },
                     None => (heading_text, None),
                 };
-                let version =
-                    version.trim_start_matches('[').trim_end_matches(']').to_string();
+                let version = version
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .to_string();
 
                 let mut sections: Vec<(String, Vec<String>)> = Vec::new();
                 let mut notes: Vec<String> = Vec::new();
@@ -234,13 +269,15 @@ impl ChangelogPanelComponent {
             etag,
             versions,
             display_count: 2,
+            load_failed: false,
         }))
     }
 
     /// Returns new Changelog in case remote one is newer
     async fn update_changelog(version: String) -> Result<Option<Self>> {
         let changelog_ref = Self::changelog_ref().await;
-        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref)).await?
+        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &changelog_ref))
+            .await?
         {
             Some(remote_version) => {
                 if version != remote_version {
@@ -322,8 +359,22 @@ impl ChangelogPanelComponent {
                 Ok(None) => None,
                 Err(e) => {
                     tracing::trace!("Failed to update changelog: {}", e);
+                    // Only worth flagging when there's nothing already on screen -
+                    // a background update-check failing shouldn't hide content
+                    // that's already showing fine.
+                    if self.versions.is_empty() {
+                        self.load_failed = true;
+                    }
                     None
                 },
+            },
+            ChangelogPanelMessage::RetryLoad => {
+                self.load_failed = false;
+                Some(Command::perform(Self::fetch(), |update| {
+                    DefaultViewMessage::ChangelogPanel(
+                        ChangelogPanelMessage::UpdateChangelog(update),
+                    )
+                }))
             },
             ChangelogPanelMessage::SaveChangelog => None,
             ChangelogPanelMessage::ScrollPositionChanged(pos) => {
@@ -338,8 +389,31 @@ impl ChangelogPanelComponent {
     pub fn view(&self) -> Element<'_, DefaultViewMessage> {
         let mut changelog = column![].spacing(10);
 
-        for version in &mut self.versions.iter().take(self.display_count) {
-            changelog = changelog.push(version.view());
+        if self.versions.is_empty() && self.load_failed {
+            changelog = changelog.push(
+                column![]
+                    .spacing(10)
+                    .align_items(Alignment::Center)
+                    .width(Length::Fill)
+                    .padding(20)
+                    .push(
+                        text(t!("changelog_panel.load_error"))
+                            .size(14)
+                            .style(TextStyle::Danger),
+                    )
+                    .push(
+                        button(text(t!("changelog_panel.retry_button")).size(13))
+                            .style(ButtonStyle::Secondary)
+                            .padding([8, 16])
+                            .on_press(DefaultViewMessage::ChangelogPanel(
+                                ChangelogPanelMessage::RetryLoad,
+                            )),
+                    ),
+            );
+        } else {
+            for version in &mut self.versions.iter().take(self.display_count) {
+                changelog = changelog.push(version.view());
+            }
         }
 
         let top_row = container(
@@ -353,8 +427,8 @@ impl ChangelogPanelComponent {
                 )
                 .push(
                     container(
-                        text("Latest Patch Notes")
-                            .style(TextStyle::Dark)
+                        text(t!("changelog_panel.heading"))
+                            .style(TextStyle::Primary)
                             .size(14)
                             .font(POPPINS_MEDIUM_FONT),
                     )
@@ -368,8 +442,8 @@ impl ChangelogPanelComponent {
                         button(
                             row![]
                                 .push(
-                                    text("Recent Changes")
-                                        .style(TextStyle::LightGrey)
+                                    text(t!("changelog_panel.recent_changes_button"))
+                                        .style(TextStyle::Muted)
                                         .size(10)
                                         .font(POPPINS_MEDIUM_FONT)
                                         .horizontal_alignment(Horizontal::Center),
@@ -385,7 +459,7 @@ impl ChangelogPanelComponent {
                         )))
                         .padding([4, 10, 0, 10])
                         .height(Length::Fixed(20.0))
-                        .style(ButtonStyle::Browser(BrowserButtonStyle::Extra)),
+                        .style(ButtonStyle::Chip(BrowserButtonStyle::Extra)),
                     )
                     .padding([0, 10, 0, 0])
                     .height(Length::Fill)
@@ -437,7 +511,7 @@ impl ChangelogVersion {
         let version_string = match &self.date {
             Some(date) => format!("v{} ({})", self.version, date),
             None => match self.version.as_str() {
-                "Unreleased" => "Nightly".to_string(),
+                "Unreleased" => t!("changelog_panel.nightly_version").into_owned(),
                 _ => format!("v{}", self.version),
             },
         };
@@ -459,7 +533,9 @@ impl ChangelogVersion {
             let mut section_col = column![]
                 .push(
                     text(section_name)
-                        .size(16)
+                        .font(POPPINS_MEDIUM_FONT)
+                        .size(13)
+                        .style(TextStyle::Secondary)
                         .line_height(LineHeight::Relative(2.0)),
                 )
                 .spacing(2);
@@ -470,15 +546,15 @@ impl ChangelogVersion {
                         row![]
                             .push(
                                 text(" •  ")
-                                    .font(POPPINS_LIGHT_FONT)
-                                    .size(12)
-                                    .line_height(LineHeight::Absolute(16.into())),
+                                    .size(13)
+                                    .style(TextStyle::Secondary)
+                                    .line_height(LineHeight::Relative(1.5)),
                             )
                             .push(
                                 text(line)
-                                    .font(POPPINS_LIGHT_FONT)
-                                    .size(12)
-                                    .line_height(LineHeight::Absolute(16.into())),
+                                    .size(13)
+                                    .style(TextStyle::Secondary)
+                                    .line_height(LineHeight::Relative(1.5)),
                             ),
                     )
                     .padding([0, 0, 1, 10]),

@@ -1,6 +1,9 @@
-use crate::gui::style::{XindelerUpdaterTheme, NAVY_BLUE, VERY_DARK_GREY};
+use crate::gui::style::{
+    INK_500, INK_600, RADIUS_MD, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY, WHITE_A10,
+    WHITE_A16, XindelerUpdaterTheme,
+};
 use iced::{
-    Background, Border, Color,
+    Background, Border,
     widget::{
         pick_list,
         pick_list::{Appearance, StyleSheet},
@@ -16,25 +19,33 @@ pub enum PickListStyle {
 impl pick_list::StyleSheet for XindelerUpdaterTheme {
     type Style = PickListStyle;
 
-    // TODO: menu from old picklist style?
     fn active(&self, _: &<Self as StyleSheet>::Style) -> Appearance {
         Appearance {
-            text_color: Color::WHITE,
-            background: Background::Color(NAVY_BLUE),
-            // icon_size: 0.5, TODO: This was removed in a recent version of iced - the
-            // dropdown handle should be smaller but this no longer appears possible.
-            // Custom widget required?
+            text_color: TEXT_PRIMARY,
+            background: Background::Color(INK_600),
+            // icon_size: 0.5, TODO: no longer settable in this iced version - see
+            // docs/design/ui-refresh-spec.md §2.8.
             border: Border {
-                width: 0.0,
-                radius: 3.0.into(),
-                color: Color::WHITE,
+                width: 1.0,
+                radius: RADIUS_MD.into(),
+                color: WHITE_A10,
             },
-            handle_color: Color::WHITE,
-            placeholder_color: VERY_DARK_GREY,
+            handle_color: TEXT_SECONDARY,
+            placeholder_color: TEXT_MUTED,
         }
     }
 
-    fn hovered(&self, style: &<Self as StyleSheet>::Style) -> Appearance {
-        self.active(style)
+    fn hovered(&self, _: &<Self as StyleSheet>::Style) -> Appearance {
+        Appearance {
+            text_color: TEXT_PRIMARY,
+            background: Background::Color(INK_500),
+            border: Border {
+                width: 1.0,
+                radius: RADIUS_MD.into(),
+                color: WHITE_A16,
+            },
+            handle_color: TEXT_PRIMARY,
+            placeholder_color: TEXT_MUTED,
+        }
     }
 }

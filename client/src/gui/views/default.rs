@@ -2,34 +2,58 @@ use crate::{
     assets::BACKGROUND_IMAGES,
     channels::Channels,
     gui::{
-        background_image::{background_image, centered_cover},
+        background_image::{centered_cover, layered},
         components::{
             AnnouncementPanelComponent, AnnouncementPanelMessage,
             ChangelogPanelComponent, ChangelogPanelMessage, GamePanelComponent,
-            GamePanelMessage,
-            LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
+            GamePanelMessage, LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
             SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
             ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
+        custom_widgets::modal_shell,
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
+        style::{
+            ARCANE_500, CRIMSON_500, GOLD_500, button::ButtonStyle,
+            container::ContainerStyle, text::TextStyle,
+        },
         subscriptions,
         views::Action,
         widget::*,
     },
+    launcher_update::LauncherUpdate,
     profiles::Profile,
 };
 
 use iced::{
-    Command, Length,
-    widget::{column, container, image::Handle, row},
+    Alignment, Command, Length,
+    widget::{
+        button, column, container, image::Handle, progress_bar, row, scrollable, text,
+    },
 };
+use rust_i18n::t;
 use std::time::Duration;
 
 /// How long each background image stays up before rotating to the next one.
 const BACKGROUND_ROTATION_INTERVAL: Duration = Duration::from_secs(12);
 
-#[cfg(windows)]
-use crate::gui::Result;
+/// How often to silently re-check for a new game version while the app is open and
+/// idle at the main menu. This is a subscription tied to the running app, not a
+/// background OS process - it stops firing the moment the app is closed.
+const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(15 * 60);
+
+/// State of the mandatory "the launcher itself needs updating" prompt. Unlike the
+/// game's own update prompt (see `GamePanelComponent`), there's no "not now" - the
+/// user can't reach the game panel at all until this resolves, since an out-of-date
+/// launcher may not even be able to fetch a working game manifest.
+#[derive(Debug, Clone)]
+enum LauncherUpdateState {
+    /// Waiting for the user to press "Update now".
+    Prompt(LauncherUpdate),
+    /// Downloading/verifying/applying - no interaction possible.
+    Applying(LauncherUpdate),
+    /// Applying failed (e.g. offline mid-download); the user can retry.
+    Failed(LauncherUpdate, String),
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct DefaultView {
@@ -43,6 +67,31 @@ pub struct DefaultView {
     show_settings: bool,
     show_server_browser: bool,
     background_index: usize,
+    launcher_update: Option<LauncherUpdateState>,
+    /// A brief "updated successfully" notice - not blocking (unlike the modals
+    /// above), just an extra row in the left sidebar that clears itself after a few
+    /// seconds. Shown for both a game auto-update (see `GamePanelComponent`) and a
+    /// launcher auto-update (detected via `Profile::pending_launcher_update_notice`
+    /// on the launch right after it happened).
+    toast: Option<String>,
+}
+
+/// How long the "updated successfully" toast stays up before clearing itself.
+const TOAST_DURATION: Duration = Duration::from_secs(5);
+
+#[cfg(debug_assertions)]
+impl DefaultView {
+    /// Builds a `DefaultView` with the game panel pre-set to a specific mock
+    /// state, for `--mock-state` manual visual testing.
+    pub fn with_mock_game_panel_state(
+        mock_state: crate::cli::MockGameState,
+        active_profile: &Profile,
+    ) -> Self {
+        Self {
+            game_panel_component: GamePanelComponent::mock(mock_state, active_profile),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -51,8 +100,12 @@ pub enum DefaultViewMessage {
     Action(Action),
     Query,
 
-    #[cfg(windows)]
-    LauncherUpdate(Result<Option<self_update::update::Release>>),
+    LauncherUpdateFound(Option<LauncherUpdate>),
+    LauncherUpdateConfirm,
+    LauncherUpdateApplied(LauncherUpdate, Result<(), String>),
+
+    ShowToast(String),
+    DismissToast,
 
     // User Interactions
     Interaction(Interaction),
@@ -96,6 +149,9 @@ impl DefaultView {
                     iced::time::every(BACKGROUND_ROTATION_INTERVAL)
                         .map(|_| DefaultViewMessage::BackgroundTick),
                 ),
+                Some(iced::time::every(UPDATE_CHECK_INTERVAL).map(|_| {
+                    DefaultViewMessage::GamePanel(GamePanelMessage::PeriodicUpdateCheck)
+                })),
             ])
             .flatten(),
         )
@@ -116,17 +172,33 @@ impl DefaultView {
             ..
         } = self;
 
-        let mut left_column =
-            column![].push(container(logo_panel_component.view()).height(Length::Fill));
-        if self.show_settings {
-            left_column = left_column.push(
-                container(settings_panel_component.view(active_profile))
+        // Logo and the game panel always keep their natural size, pinned to the top
+        // and bottom of the sidebar respectively. The space between them is the only
+        // flexible region: normally just an empty spacer, but when settings is open
+        // it holds the settings panel in a scrollable - so a tall settings panel
+        // scrolls internally instead of squeezing the logo or the Play button
+        // (see Matías's "se achica todo" report).
+        let middle: Element<'a, DefaultViewMessage> = if self.show_settings {
+            scrollable(settings_panel_component.view(active_profile))
+                .height(Length::Fill)
+                .into()
+        } else {
+            container(column![]).height(Length::Fill).into()
+        };
+
+        let mut left_column = column![]
+            .push(
+                container(logo_panel_component.view(!self.show_settings))
+                    .height(Length::Shrink),
+            )
+            .push(middle)
+            .push(
+                container(game_panel_component.view(active_profile))
                     .height(Length::Shrink),
             );
+        if let Some(message) = &self.toast {
+            left_column = left_column.push(container(toast_banner(message)).padding(10));
         }
-        left_column = left_column.push(
-            container(game_panel_component.view(active_profile)).height(Length::Shrink),
-        );
 
         let left = container(left_column)
             .height(Length::Fill)
@@ -165,10 +237,31 @@ impl DefaultView {
         let background_bytes =
             BACKGROUND_IMAGES[self.background_index % BACKGROUND_IMAGES.len()];
 
-        background_image(
+        let content = layered(
             centered_cover(Handle::from_memory(background_bytes)),
             container(main_row).width(Length::Fill).height(Length::Fill),
-        )
+        );
+
+        // The "new game version available" prompt is a third layer on top of
+        // everything else - it blocks interaction with the rest of the window while
+        // it's up, same trick used to keep the background photo from stealing clicks.
+        let content = match game_panel_component.update_prompt() {
+            Some(prompt) => layered(content, prompt.map(DefaultViewMessage::GamePanel)),
+            None => content,
+        };
+
+        let content = match server_browser_panel_component.add_server_modal() {
+            Some(modal) => layered(content, modal),
+            None => content,
+        };
+
+        // The mandatory launcher-update dialog sits above even the game's own
+        // prompt - an out-of-date launcher may not be able to fetch a working game
+        // manifest at all, so it takes priority.
+        match &self.launcher_update {
+            Some(state) => layered(content, launcher_update_dialog(state)),
+            None => content,
+        }
     }
 
     pub fn update(
@@ -187,7 +280,33 @@ impl DefaultView {
             DefaultViewMessage::Query => {
                 let api_version_url = active_profile.api_version_url();
                 let announcement_url = active_profile.announcement_url();
-                return Command::batch(vec![
+
+                // A launcher auto-update applied right before this process started -
+                // let the user know it went through, then clear the marker so it
+                // doesn't show again next launch.
+                let mut commands = vec![];
+                if let Some(old_version) =
+                    active_profile.pending_launcher_update_notice.clone()
+                {
+                    let mut cleared_profile = active_profile.clone();
+                    cleared_profile.pending_launcher_update_notice = None;
+                    commands.push(Command::perform(
+                        async { Action::UpdateProfile(cleared_profile) },
+                        DefaultViewMessage::Action,
+                    ));
+                    commands.push(Command::perform(async {}, move |_| {
+                        DefaultViewMessage::ShowToast(
+                            t!(
+                                "default_view.toast_launcher_updated",
+                                old_version = old_version,
+                                new_version = env!("CARGO_PKG_VERSION")
+                            )
+                            .into_owned(),
+                        )
+                    }));
+                }
+
+                commands.extend([
                     Command::perform(NewsPanelComponent::load_news(), |update| {
                         DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
                             UpdateRssFeed(update),
@@ -201,11 +320,16 @@ impl DefaultView {
                             )
                         },
                     ),
-                    Command::perform(ServerBrowserPanelComponent::fetch(), |update| {
-                        DefaultViewMessage::ServerBrowserPanel(
-                            ServerBrowserPanelMessage::UpdateServerList(update),
-                        )
-                    }),
+                    Command::perform(
+                        ServerBrowserPanelComponent::fetch(
+                            active_profile.custom_servers.clone(),
+                        ),
+                        |update| {
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::UpdateServerList(update),
+                            )
+                        },
+                    ),
                     Command::perform(
                         AnnouncementPanelComponent::fetch(
                             api_version_url,
@@ -225,15 +349,15 @@ impl DefaultView {
                             )
                         },
                     ),
-                    #[cfg(windows)]
                     Command::perform(
-                        async { tokio::task::block_in_place(crate::windows::query) },
-                        DefaultViewMessage::LauncherUpdate,
+                        crate::launcher_update::check_for_update(),
+                        DefaultViewMessage::LauncherUpdateFound,
                     ),
                     Command::perform(async {}, |_| {
                         DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                     }),
                 ]);
+                return Command::batch(commands);
             },
 
             DefaultViewMessage::GamePanel(msg) => {
@@ -267,19 +391,49 @@ impl DefaultView {
                 }
             },
             DefaultViewMessage::ServerBrowserPanel(msg) => {
-                if let Some(command) = self.server_browser_panel_component.update(msg) {
+                if let Some(command) = self
+                    .server_browser_panel_component
+                    .update(msg, active_profile)
+                {
                     return command;
                 }
             },
 
-            #[cfg(windows)]
-            DefaultViewMessage::LauncherUpdate(update) => {
-                if let Ok(Some(release)) = update {
-                    return Command::perform(
-                        async { Action::LauncherUpdate(release) },
-                        DefaultViewMessage::Action,
-                    );
+            DefaultViewMessage::LauncherUpdateFound(Some(update)) => {
+                if active_profile.auto_update_launcher {
+                    return self.apply_launcher_update(update, active_profile);
                 }
+                self.launcher_update = Some(LauncherUpdateState::Prompt(update));
+            },
+            DefaultViewMessage::LauncherUpdateFound(None) => {},
+            DefaultViewMessage::LauncherUpdateConfirm => {
+                if let Some(
+                    LauncherUpdateState::Prompt(update)
+                    | LauncherUpdateState::Failed(update, _),
+                ) = self.launcher_update.clone()
+                {
+                    return self.apply_launcher_update(update, active_profile);
+                }
+            },
+            DefaultViewMessage::LauncherUpdateApplied(update, result) => {
+                // Success doesn't actually reach here in practice - applying an
+                // update replaces/relaunches the process instead of returning. This
+                // only fires on failure (e.g. offline mid-download), so the user can
+                // retry.
+                self.launcher_update = match result {
+                    Ok(()) => None,
+                    Err(reason) => Some(LauncherUpdateState::Failed(update, reason)),
+                };
+            },
+
+            DefaultViewMessage::ShowToast(message) => {
+                self.toast = Some(message);
+                return Command::perform(tokio::time::sleep(TOAST_DURATION), |_| {
+                    DefaultViewMessage::DismissToast
+                });
+            },
+            DefaultViewMessage::DismissToast => {
+                self.toast = None;
             },
 
             // User Interaction
@@ -315,4 +469,124 @@ impl DefaultView {
 
         Command::none()
     }
+
+    fn apply_launcher_update(
+        &mut self,
+        update: LauncherUpdate,
+        active_profile: &Profile,
+    ) -> Command<DefaultViewMessage> {
+        self.launcher_update = Some(LauncherUpdateState::Applying(update.clone()));
+        let update_for_result = update.clone();
+        let profile = active_profile.clone();
+        Command::perform(
+            crate::launcher_update::apply(update, profile),
+            move |result| {
+                DefaultViewMessage::LauncherUpdateApplied(
+                    update_for_result.clone(),
+                    result.map_err(|e| e.to_string()),
+                )
+            },
+        )
+    }
+}
+
+/// The mandatory "the launcher needs updating" dialog. There's no dismiss button -
+/// `default.rs`'s `view()` layers this on top of the whole window, same as the game's
+/// own update prompt, so it blocks all interaction until resolved.
+fn launcher_update_dialog(
+    state: &LauncherUpdateState,
+) -> Element<'static, DefaultViewMessage> {
+    fn primary_action(label: impl ToString) -> Element<'static, DefaultViewMessage> {
+        button(text(label).font(crate::assets::POPPINS_BOLD_FONT).size(14))
+            .style(ButtonStyle::Primary)
+            .padding([10, 22])
+            .on_press(DefaultViewMessage::LauncherUpdateConfirm)
+            .into()
+    }
+
+    match state {
+        LauncherUpdateState::Prompt(update) => {
+            let body = text(t!("default_view.launcher_update_body"))
+                .size(14)
+                .style(TextStyle::Secondary)
+                .into();
+            modal_shell(
+                GOLD_500,
+                t!("default_view.launcher_update_eyebrow"),
+                t!(
+                    "default_view.launcher_update_title",
+                    version = update.version
+                ),
+                body,
+                Some(primary_action(t!("default_view.launcher_update_confirm"))),
+            )
+        },
+        LauncherUpdateState::Applying(update) => {
+            let body = column![]
+                .spacing(16)
+                .push(
+                    text(t!(
+                        "default_view.launcher_update_applying_body",
+                        version = update.version
+                    ))
+                    .size(14)
+                    .style(TextStyle::Secondary),
+                )
+                .push(progress_bar(0.0..=100.0, 100.0).height(Length::Fixed(6.0)))
+                .into();
+            modal_shell(
+                ARCANE_500,
+                t!("default_view.launcher_update_applying_eyebrow"),
+                t!("default_view.launcher_update_applying_title"),
+                body,
+                None,
+            )
+        },
+        LauncherUpdateState::Failed(update, reason) => {
+            let body = column![]
+                .spacing(12)
+                .push(
+                    text(t!("default_view.launcher_update_failed_body"))
+                        .size(14)
+                        .style(TextStyle::Secondary),
+                )
+                .push(
+                    container(text(reason.clone()).size(12).style(TextStyle::Danger))
+                        .style(ContainerStyle::ErrorCallout)
+                        .padding([10, 12]),
+                )
+                .into();
+            modal_shell(
+                CRIMSON_500,
+                t!("default_view.launcher_update_failed_eyebrow"),
+                t!(
+                    "default_view.launcher_update_failed_title",
+                    version = update.version
+                ),
+                body,
+                Some(primary_action(t!("default_view.launcher_update_retry"))),
+            )
+        },
+    }
+}
+
+/// A brief, non-blocking "updated successfully" notice - unlike the modals above,
+/// this is just an extra row in the normal layout, not a full-window overlay.
+fn toast_banner(message: &str) -> Element<'_, DefaultViewMessage> {
+    container(
+        row![]
+            .spacing(10)
+            .align_items(Alignment::Center)
+            .push(
+                container(text(""))
+                    .width(Length::Fixed(8.0))
+                    .height(Length::Fixed(8.0))
+                    .style(ContainerStyle::StatusDot(crate::gui::style::SUCCESS_TEXT)),
+            )
+            .push(text(message).size(13).style(TextStyle::Primary)),
+    )
+    .padding([10, 14])
+    .width(Length::Fill)
+    .style(ContainerStyle::Toast)
+    .into()
 }

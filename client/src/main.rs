@@ -5,6 +5,7 @@ mod consts;
 mod error;
 mod gui;
 mod io;
+mod launcher_update;
 mod logger;
 mod net;
 #[cfg(unix)]
@@ -13,6 +14,12 @@ mod profiles;
 mod update;
 #[cfg(windows)]
 mod windows;
+
+// Loads client/locales/*.yml at compile time. English is the fallback for any key a
+// translation is missing, so a half-translated locale degrades to English rather than
+// rendering a raw key. The active locale is set from `Profile::language` in
+// `Profile::load()` and switched live from the settings panel.
+rust_i18n::i18n!("locales", fallback = "en");
 
 use crate::error::ClientError;
 

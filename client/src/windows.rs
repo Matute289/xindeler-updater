@@ -1,10 +1,8 @@
-use crate::{Result, fs, windows};
-use self_update::update::{Release, ReleaseAsset};
-use semver::Version;
+use crate::{Result, windows};
 use std::{
     ffi::{OsStr, OsString},
-    fs::File,
     os::windows::ffi::OsStrExt,
+    path::Path,
     ptr,
 };
 use windows_sys::Win32::{
@@ -15,113 +13,28 @@ use windows_sys::Win32::{
     },
 };
 
-fn get_asset(release: &Release) -> Option<ReleaseAsset> {
-    release.asset_for("windows", None).or_else(|| {
-        release
-            .assets
-            .iter()
-            .find(|a| {
-                let name = a.name.to_uppercase();
-                let download_url = a.download_url.to_uppercase();
-
-                download_url.ends_with(".MSI")
-                    || download_url.ends_with("INSTALLER.EXE")
-                    || (name.ends_with("INSTALLER") && name.contains("WINDOWS"))
-            })
-            .cloned()
-    })
-}
-
-pub fn query() -> Result<Option<Release>> {
-    let releases = self_update::backends::github::ReleaseList::configure()
-        .repo_owner("Matute289")
-        .repo_name("xindeler-updater")
-        .build()?
-        .fetch()?;
-
-    // Get latest Github release
-    if let Some(latest_release) = releases.first() {
-        tracing::trace!("detected online release: {:?}", latest_release);
-
-        let newer = Version::parse(&latest_release.version)?
-            > Version::parse(env!("CARGO_PKG_VERSION"))?;
-        let contains_asset = get_asset(latest_release).is_some();
-
-        tracing::trace!(?newer, ?contains_asset, "online release info");
-
-        // Check if Github release is newer
-        if contains_asset && newer {
-            tracing::debug!("Found new XindelerUpdater release: {}", &latest_release.version);
-            return Ok(Some(latest_release.clone()));
-        } else {
-            tracing::debug!("XindelerUpdater is up-to-date.");
-        }
-    }
-    Ok(None)
-}
-
-/// Tries to self update with provided release
-pub(crate) fn update(latest_release: &Release) -> Result<()> {
-    let update_cache_path = fs::get_cache_path().join("update");
-
-    // Cleanup
-    let _ = std::fs::remove_dir_all(&update_cache_path);
-    std::fs::create_dir_all(&update_cache_path)
-        .expect("failed to create cache directory!");
-
-    let asset = get_asset(latest_release);
-
-    // Check Github release provides artifact for current platform
-    if let Some(asset) = asset {
-        tracing::debug!("Found asset: {:?}", asset);
-        let download_file_name = asset
-            .download_url
-            .rsplit_once('/')
-            .map(|(_, end)| end)
-            .unwrap_or("installer.exe");
-
-        let install_file_path = update_cache_path.join(download_file_name);
-        tracing::debug!(
-            "Downloading '{}' to '{}'",
-            &asset.download_url,
-            install_file_path.display()
-        );
-        let install_file_path = update_cache_path.join(&download_file_name);
-
-        let install_file = File::create(&install_file_path)?;
-
-        self_update::Download::from_url(&asset.download_url)
-            .set_header(
-                reqwest::header::ACCEPT,
-                "application/octet-stream".parse().unwrap(),
-            )
-            .show_progress(false)
-            .download_to(&install_file)?;
-
-        install_file.sync_all()?; //make sure we block on sync before we start it
-        drop(install_file);
-
-        tracing::debug!("Starting installer...");
-        // Execute the installer
-        let result = match install_file_path.extension().and_then(|f| f.to_str()) {
-            Some("exe") => windows::execute_as_admin(install_file_path, ""),
-            _ => windows::execute_as_admin(
-                "msiexec",
-                &format!(
-                    "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
-                    install_file_path.display(),
-                    update_cache_path.join("xindeler-updater-install.log").display()
-                ),
+/// Runs a downloaded launcher installer (`.exe` or `.msi`) elevated (UAC prompt) and
+/// exits the current process - Windows can't replace a running exe's own file the way
+/// Unix can, so this hands off to the installer instead. See `launcher_update.rs`,
+/// which downloads and checksum-verifies the installer before calling this.
+pub(crate) fn run_installer_elevated(install_file_path: &Path) -> Result<()> {
+    tracing::debug!("Starting installer...");
+    let result = match install_file_path.extension().and_then(|f| f.to_str()) {
+        Some("exe") => windows::execute_as_admin(install_file_path, ""),
+        _ => windows::execute_as_admin(
+            "msiexec",
+            &format!(
+                "/passive /i \"{}\" AUTOSTART=1",
+                install_file_path.display(),
             ),
-        };
+        ),
+    };
 
-        if result <= 32 {
-            tracing::error!(
-                "Failed to update xindeler-updater! {}",
-                std::io::Error::last_os_error()
-            );
-        }
-        std::process::exit(0);
+    if result <= 32 {
+        tracing::error!(
+            "Failed to launch xindeler-updater installer! {}",
+            std::io::Error::last_os_error()
+        );
     }
 
     Ok(())

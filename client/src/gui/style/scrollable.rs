@@ -1,4 +1,4 @@
-use crate::gui::style::{ALMOST_BLACK, ALMOST_BLACK2, XindelerUpdaterTheme};
+use crate::gui::style::{WHITE_A06, WHITE_A16, WHITE_A24, XindelerUpdaterTheme};
 use iced::{
     Background, Border, Color,
     widget::{
@@ -28,11 +28,11 @@ impl scrollable::StyleSheet for XindelerUpdaterTheme {
                 },
                 scroller: Scroller {
                     border: Border {
-                        color: ALMOST_BLACK,
+                        color: WHITE_A16,
                         width: 0.0,
-                        radius: 5.0.into(),
+                        radius: 4.0.into(),
                     },
-                    color: ALMOST_BLACK,
+                    color: WHITE_A16,
                 },
             },
             gap: None,
@@ -43,7 +43,7 @@ impl scrollable::StyleSheet for XindelerUpdaterTheme {
         Appearance {
             container: container::Appearance::default(),
             scrollbar: Scrollbar {
-                background: Some(Background::Color(ALMOST_BLACK2)),
+                background: Some(Background::Color(WHITE_A06)),
                 border: Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
@@ -51,11 +51,11 @@ impl scrollable::StyleSheet for XindelerUpdaterTheme {
                 },
                 scroller: Scroller {
                     border: Border {
-                        color: ALMOST_BLACK,
+                        color: WHITE_A24,
                         width: 0.0,
-                        radius: 5.0.into(),
+                        radius: 4.0.into(),
                     },
-                    color: ALMOST_BLACK,
+                    color: WHITE_A24,
                 },
             },
             gap: None,

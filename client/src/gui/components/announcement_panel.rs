@@ -1,7 +1,7 @@
 use crate::{
     Result,
     assets::{POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON},
-    consts::{XINDELER_UPDATER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
+    consts::{SUPPORTED_SERVER_API_VERSION, XINDELER_UPDATER_RELEASE_URL},
     gui::{
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::default::{DefaultViewMessage, Interaction},
@@ -14,6 +14,7 @@ use iced::{
     alignment::Vertical,
     widget::{button, column, container, image, image::Handle, row, text},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -87,37 +88,40 @@ impl AnnouncementPanelComponent {
             (false, None) => {
                 return row![].into();
             },
-            (true, None) => {
-                "XindelerUpdater is outdated, please update to the latest release!".to_string()
-            },
+            (true, None) => t!("announcement_panel.outdated").into_owned(),
             (false, Some(msg)) => {
                 let date: chrono::DateTime<chrono::Local> =
                     self.announcement_last_change.into();
-                format!("News from {}: {}", date.format("%Y-%m-%d %H:%M"), msg)
+                t!(
+                    "announcement_panel.news",
+                    date = date.format("%Y-%m-%d %H:%M"),
+                    message = msg
+                )
+                .into_owned()
             },
             (true, Some(msg)) => {
-                format!("XindelerUpdater is outdated! News: {}", msg)
+                t!("announcement_panel.outdated_with_news", message = msg).into_owned()
             },
         };
 
         let mut content_row = row![
             container(
                 Text::new(rowtext)
-                    .size(14)
-                    .style(TextStyle::Dark)
+                    .size(13)
+                    .style(TextStyle::Accent)
                     .font(POPPINS_MEDIUM_FONT),
             )
             .width(Length::Fill)
             .height(Length::Fill)
             .align_y(Vertical::Center)
-            .padding([3, 0, 0, 16]),
+            .padding([0, 0, 0, 16]),
         ];
         if update {
             content_row = content_row.push(
                 container(
                     button(
                         row![
-                            text("Download XindelerUpdater").size(10),
+                            text(t!("announcement_panel.download_button")).size(11),
                             image(Handle::from_memory(UP_RIGHT_ARROW_ICON.to_vec(),))
                         ]
                         .spacing(5)
@@ -126,9 +130,9 @@ impl AnnouncementPanelComponent {
                     .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                         XINDELER_UPDATER_RELEASE_URL.to_string(),
                     )))
-                    .padding([4, 10, 0, 12])
-                    .height(Length::Fixed(20.0))
-                    .style(ButtonStyle::XindelerUpdaterDownload),
+                    .padding([0, 12])
+                    .height(Length::Fixed(26.0))
+                    .style(ButtonStyle::Secondary),
                 )
                 .padding([0, 20, 0, 0])
                 .height(Length::Fill)
@@ -140,7 +144,7 @@ impl AnnouncementPanelComponent {
         let top_row = row![column![
             container(content_row.height(Length::Fill)).align_y(Vertical::Center),
         ]]
-        .height(Length::Fixed(50.0));
+        .height(Length::Fixed(44.0));
 
         let col = column![].push(
             container(top_row)

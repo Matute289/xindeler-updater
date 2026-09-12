@@ -1,4 +1,4 @@
-use crate::gui::style::{XindelerUpdaterTheme, LIME_GREEN, VERY_DARK_GREY};
+use crate::gui::style::{GOLD_500, INK_600, RADIUS_SM, XindelerUpdaterTheme};
 use iced::{
     Background,
     widget::{progress_bar, progress_bar::Appearance},
@@ -22,8 +22,8 @@ impl progress_bar::StyleSheet for XindelerUpdaterTheme {
 
 fn default_progress_bar_style() -> Appearance {
     Appearance {
-        background: Background::Color(VERY_DARK_GREY),
-        bar: Background::Color(LIME_GREEN),
-        border_radius: 3.0.into(),
+        background: Background::Color(INK_600),
+        bar: Background::Color(GOLD_500),
+        border_radius: RADIUS_SM.into(),
     }
 }

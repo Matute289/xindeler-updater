@@ -22,10 +22,8 @@ use crate::{
     profiles::Profile,
 };
 use iced::{Application, Command, Settings, Size, Subscription};
-#[cfg(windows)]
-use views::update::{UpdateView, UpdateViewMessage};
 use views::{
-    Action, View,
+    Action,
     default::{DefaultView, DefaultViewMessage},
 };
 
@@ -36,16 +34,8 @@ pub fn run(cmd: CmdLine) -> Result<()> {
 
 #[derive(Debug, Clone)]
 pub struct XindelerUpdater {
-    view: View,
-
     pub default_view: DefaultView,
-    #[cfg(windows)]
-    update_view: UpdateView,
     pub active_profile: Profile,
-
-    // XindelerUpdater update
-    #[cfg(windows)]
-    update: Option<self_update::update::Release>,
 }
 
 impl XindelerUpdater {
@@ -53,13 +43,8 @@ impl XindelerUpdater {
 
     pub fn new(active_profile: Profile) -> Self {
         Self {
-            view: View::default(),
             default_view: DefaultView::default(),
-            #[cfg(windows)]
-            update_view: UpdateView::default(),
             active_profile,
-            #[cfg(windows)]
-            update: None,
         }
     }
 }
@@ -73,8 +58,6 @@ pub enum Message {
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
-    #[cfg(windows)]
-    UpdateViewMessage(UpdateViewMessage),
 }
 
 impl Application for XindelerUpdater {
@@ -87,10 +70,23 @@ impl Application for XindelerUpdater {
         #[cfg(windows)]
         crate::windows::hide_non_inherited_console();
 
-        (
-            XindelerUpdater::new(Profile::load()),
-            Command::perform(async {}, |_| Message::Loaded),
-        )
+        // `mut` is only needed to inject a --mock-state override below, which only
+        // exists in debug builds.
+        #[allow(unused_mut)]
+        let mut updater = XindelerUpdater::new(Profile::load());
+
+        #[cfg(debug_assertions)]
+        if let Some(mock_state) = _flags.mock_state {
+            updater.default_view = DefaultView::with_mock_game_panel_state(
+                mock_state,
+                &updater.active_profile,
+            );
+            // Skip the real Query/StartUpdate flow entirely - it would immediately
+            // overwrite the mocked state with a live update check.
+            return (updater, Command::none());
+        }
+
+        (updater, Command::perform(async {}, |_| Message::Loaded))
     }
 
     fn title(&self) -> String {
@@ -109,26 +105,15 @@ impl Application for XindelerUpdater {
 
             // Views
             Message::DefaultViewMessage(msg) => {
-                if let DefaultViewMessage::Action(action) = &msg {
-                    match action {
-                        Action::UpdateProfile(profile) => {
-                            self.active_profile = profile.clone();
-                            self.active_profile.reload_wgpu_backends();
-                            self.active_profile.reload_wgpu_devices();
+                if let DefaultViewMessage::Action(Action::UpdateProfile(profile)) = &msg {
+                    self.active_profile = profile.clone();
+                    self.active_profile.reload_wgpu_backends();
+                    self.active_profile.reload_wgpu_devices();
 
-                            return Command::perform(
-                                Profile::save(self.active_profile.clone()),
-                                Message::Saved,
-                            );
-                        },
-                        #[cfg(windows)] // for now
-                        Action::SwitchView(view) => self.view = *view,
-                        #[cfg(windows)]
-                        Action::LauncherUpdate(release) => {
-                            self.update = Some(release.clone());
-                            self.view = View::Update
-                        },
-                    }
+                    return Command::perform(
+                        Profile::save(self.active_profile.clone()),
+                        Message::Saved,
+                    );
                 }
 
                 return self
@@ -136,44 +121,15 @@ impl Application for XindelerUpdater {
                     .update(msg, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
-            #[cfg(windows)]
-            Message::UpdateViewMessage(msg) => {
-                if let UpdateViewMessage::Action(action) = &msg {
-                    match action {
-                        Action::UpdateProfile(profile) => {
-                            self.active_profile = profile.clone();
-                            return Command::perform(
-                                Profile::save(self.active_profile.clone()),
-                                Message::Saved,
-                            );
-                        },
-                        Action::SwitchView(view) => self.view = *view,
-                        Action::LauncherUpdate(_) => {},
-                    }
-                }
-
-                return self
-                    .update_view
-                    .update(msg, &self.update)
-                    .map(Message::UpdateViewMessage);
-            },
         }
 
         Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let Self {
-            view, default_view, ..
-        } = self;
-
-        match view {
-            View::Default => default_view
-                .view(&self.active_profile)
-                .map(Message::DefaultViewMessage),
-            #[cfg(windows)]
-            View::Update => self.update_view.view().map(Message::UpdateViewMessage),
-        }
+        self.default_view
+            .view(&self.active_profile)
+            .map(Message::DefaultViewMessage)
     }
 
     fn theme(&self) -> Self::Theme {
@@ -181,14 +137,9 @@ impl Application for XindelerUpdater {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        match self.view {
-            View::Default => self
-                .default_view
-                .subscription()
-                .map(Message::DefaultViewMessage),
-            #[cfg(windows)]
-            View::Update => iced::Subscription::none(),
-        }
+        self.default_view
+            .subscription()
+            .map(Message::DefaultViewMessage)
     }
 }
 
@@ -205,20 +156,21 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                 .unwrap(),
         ),
-        min_size: Some(Size::new(400.0, 250.0)),
+        min_size: Some(Size::new(880.0, 560.0)),
         ..Default::default()
     };
 
     #[cfg(target_os = "linux")]
     {
-        window_settings.platform_specific.application_id = XindelerUpdater::APP_ID.to_string();
+        window_settings.platform_specific.application_id =
+            XindelerUpdater::APP_ID.to_string();
     }
 
     Settings {
         window: window_settings,
         flags: cmd,
         default_font: crate::assets::POPPINS_FONT,
-        default_text_size: 20.0.into(),
+        default_text_size: 14.0.into(),
         antialiasing: true,
         id: Some(XindelerUpdater::APP_ID.to_string()),
         fonts: vec![

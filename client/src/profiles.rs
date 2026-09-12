@@ -37,6 +37,32 @@ pub struct Profile {
     /// used to avoid duplicate redownload of patched binaries on nixos
     pub patched_crc32s: Vec<PatchedInfo>,
 
+    /// If true, a new game version is downloaded/installed automatically as soon as
+    /// it's found, with no confirmation prompt - just a one-time "updated
+    /// successfully" notice once it's done. Independent of `auto_update_launcher`.
+    /// `#[serde(default)]` so profiles saved before this field existed still load
+    /// (defaulting to false, the safer opt-in behavior).
+    #[serde(default)]
+    pub auto_update_game: bool,
+    /// Same as `auto_update_game`, but for the launcher itself.
+    #[serde(default)]
+    pub auto_update_launcher: bool,
+    /// Set right before an auto-applied launcher update replaces/relaunches the
+    /// process, so the new process can show a one-time "updated successfully" notice
+    /// on its next startup instead of silently going quiet.
+    #[serde(default)]
+    pub pending_launcher_update_notice: Option<String>,
+    /// Language the launcher UI is rendered in. `#[serde(default)]` for the same
+    /// reason as the two fields above: profiles saved before this field existed must
+    /// still load, falling back to `Language::English`.
+    #[serde(default)]
+    pub language: Language,
+    /// Servers the player added manually by IP/DNS name, in addition to the curated
+    /// list fetched from `OFFICIAL_SERVER_LIST`. `#[serde(default)]` for the same
+    /// backward-compat reason as the fields above.
+    #[serde(default)]
+    pub custom_servers: Vec<veloren_serverbrowser_api::GameServer>,
+
     #[serde(skip)]
     pub supported_wgpu_backends: Vec<WgpuBackend>,
     #[serde(skip)]
@@ -73,16 +99,23 @@ pub enum WgpuBackend {
     Vulkan,
 }
 
+// Kept in sync with the game's own hardcoded list (xindeler-new-horizon,
+// voxygen/src/main.rs's ListWgpuBackends) - it doesn't query anything either, and this
+// is only the pre-install fallback shown before the launcher can ask the real game
+// binary. DX11 is deliberately absent: wgpu dropped that backend in 0.19, and the game
+// doesn't parse "dx11" either (falls through to its own default) - so it was a
+// selectable option here that silently did nothing.
 #[cfg(target_os = "windows")]
 static WGPU_BACKENDS: &[WgpuBackend] = &[
     WgpuBackend::Auto,
-    WgpuBackend::DX11,
+    WgpuBackend::OpenGl,
     WgpuBackend::DX12,
     WgpuBackend::Vulkan,
 ];
 
 #[cfg(target_os = "linux")]
-static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
+static WGPU_BACKENDS: &[WgpuBackend] =
+    &[WgpuBackend::Auto, WgpuBackend::OpenGl, WgpuBackend::Vulkan];
 
 #[cfg(target_os = "macos")]
 static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
@@ -176,6 +209,41 @@ pub enum LogLevel {
 pub static LOG_LEVELS: &[LogLevel] =
     &[LogLevel::Default, LogLevel::Debug, LogLevel::Trace];
 
+/// The language the launcher's own UI is rendered in. Only affects XindelerUpdater -
+/// the game reads its own language setting from its own config.
+// `Default` is derived rather than hand-written (clippy::derivable_impls), matching
+// how `LogLevel` above declares its own default variant.
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Language {
+    #[default]
+    English,
+    EsLatam,
+}
+
+// Deliberately not `derive_more::Display`: that would render the bare variant ident
+// ("EsLatam") in the settings dropdown. These are the endonyms shown to the user.
+impl std::fmt::Display for Language {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Language::English => "English",
+            Language::EsLatam => "Español (Latinoamérica)",
+        })
+    }
+}
+
+impl Language {
+    /// The locale code handed to `rust_i18n::set_locale`, matching the file names in
+    /// `client/locales/`.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Language::English => "en",
+            Language::EsLatam => "es",
+        }
+    }
+}
+
+pub static LANGUAGES: &[Language] = &[Language::English, Language::EsLatam];
+
 impl Server {
     pub fn url(&self) -> &str {
         match self {
@@ -197,6 +265,11 @@ impl Profile {
             env_vars: String::new(),
             assets_override: None,
             patched_crc32s: Vec::new(),
+            auto_update_game: false,
+            auto_update_launcher: false,
+            pending_launcher_update_notice: None,
+            language: Language::default(),
+            custom_servers: Vec::new(),
             supported_wgpu_backends: Vec::new(),
             wgpu_device: WgpuDevice::Auto,
             supported_wgpu_devices: Vec::new(),
@@ -206,7 +279,7 @@ impl Profile {
     pub fn load() -> Self {
         fs::verify_cache();
         let saved_state_file = fs::savedstate_file();
-        match std::fs::File::open(&saved_state_file) {
+        let profile = match std::fs::File::open(&saved_state_file) {
             Ok(file) => {
                 match ron::de::from_reader(file) {
                     Ok(profile) => {
@@ -233,7 +306,14 @@ impl Profile {
                 );
                 Self::default()
             },
-        }
+        };
+
+        // Applied here rather than in the GUI so the very first `view()` already
+        // renders in the persisted language - no English flash before the user's
+        // choice takes effect.
+        rust_i18n::set_locale(profile.language.code());
+
+        profile
     }
 
     pub async fn save(self) -> Result<()> {
@@ -417,7 +497,13 @@ impl Profile {
                 };
             }
         } else {
-            self.supported_wgpu_backends = Vec::new();
+            // Nothing installed yet to actually ask, so there's no real list to
+            // query - but the Settings dropdown still needs *something* selectable
+            // (previously this was an empty Vec, leaving the dropdown with nothing
+            // to pick even though it displays "Auto" as the current value). Same
+            // static per-OS fallback query_wgpu_backends() itself falls back to when
+            // the game binary exists but fails to answer.
+            self.supported_wgpu_backends = WGPU_BACKENDS.to_vec();
         }
     }
 
@@ -433,7 +519,7 @@ impl Profile {
                 self.wgpu_device = WgpuDevice::Auto
             }
         } else {
-            self.supported_wgpu_devices = Vec::new();
+            self.supported_wgpu_devices = vec![WgpuDevice::Auto];
         }
     }
 }
