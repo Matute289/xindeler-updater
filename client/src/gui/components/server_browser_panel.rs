@@ -1018,14 +1018,7 @@ impl ServerBrowserPanelComponent {
                 None
             },
             ServerBrowserPanelMessage::ShowAddServerForm => {
-                self.add_server_form = Some(AddServerForm {
-                    // Address and port are required - port is pre-filled with the
-                    // common default so most people never have to think about it,
-                    // but it's still an editable, required field rather than a
-                    // silent fallback (only the name is genuinely optional).
-                    port: net::DEFAULT_GAME_PORT.to_string(),
-                    ..Default::default()
-                });
+                self.add_server_form = Some(AddServerForm::default());
                 None
             },
             ServerBrowserPanelMessage::ShowEditServerForm { address, port } => {
@@ -1080,7 +1073,9 @@ impl ServerBrowserPanelComponent {
                     );
                     return None;
                 }
-                if form.port.trim().parse::<u16>().is_err() {
+                if !form.port.trim().is_empty()
+                    && form.port.trim().parse::<u16>().is_err()
+                {
                     form.state = AddServerFormState::Error(
                         t!("server_browser_panel.add_server_error_port").into_owned(),
                     );

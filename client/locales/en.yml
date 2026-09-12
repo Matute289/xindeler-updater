@@ -123,7 +123,7 @@ server_browser_panel:
   add_server_edit_title: "Edit server"
   add_server_name_placeholder: "Name (optional)"
   add_server_address_placeholder: "IP address or domain name"
-  add_server_port_placeholder: "Port"
+  add_server_port_placeholder: "Port (optional, defaults to 14004)"
   add_server_confirm: "Add"
   add_server_save: "Save"
   add_server_cancel: "Cancel"
