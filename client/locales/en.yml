@@ -117,6 +117,19 @@ server_browser_panel:
   email_field: "Email: %{value}"
   extra_field: "%{name}: %{value}"
   fetch_error: "Error fetching server list"
+  add_server_button: "+ ADD SERVER"
+  add_server_eyebrow: "CUSTOM SERVER"
+  add_server_title: "Add a server"
+  add_server_address_placeholder: "IP address or domain name"
+  add_server_port_placeholder: "Port (optional, defaults to 14004)"
+  add_server_confirm: "Add"
+  add_server_cancel: "Cancel"
+  add_server_validating: "Checking the server responds…"
+  add_server_error_empty: "Enter an address first"
+  add_server_error_port: "That doesn't look like a valid port"
+  add_server_error_unreachable: "Couldn't reach a game server at that address"
+  custom_server_badge: "CUSTOM"
+  custom_server_tooltip: "Added manually - we could only confirm this speaks the Veloren/Xindeler network protocol, not that it's specifically a Xindeler-compatible server. Connect at your own risk."
 
 # client/src/gui/views/default.rs
 default_view:

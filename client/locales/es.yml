@@ -118,6 +118,19 @@ server_browser_panel:
   email_field: "Email: %{value}"
   extra_field: "%{name}: %{value}"
   fetch_error: "Error al obtener la lista de servidores"
+  add_server_button: "+ AGREGAR SERVIDOR"
+  add_server_eyebrow: "SERVIDOR PERSONALIZADO"
+  add_server_title: "Agregar un servidor"
+  add_server_address_placeholder: "Dirección IP o nombre de dominio"
+  add_server_port_placeholder: "Puerto (opcional, por defecto 14004)"
+  add_server_confirm: "Agregar"
+  add_server_cancel: "Cancelar"
+  add_server_validating: "Comprobando que el servidor responda…"
+  add_server_error_empty: "Primero ingresá una dirección"
+  add_server_error_port: "Eso no parece un puerto válido"
+  add_server_error_unreachable: "No pudimos encontrar un servidor de juego en esa dirección"
+  custom_server_badge: "MANUAL"
+  custom_server_tooltip: "Lo agregaste vos - solo pudimos confirmar que responde al protocolo de red de Veloren/Xindeler, no que sea específicamente un servidor compatible con Xindeler. Conectate bajo tu propio riesgo."
 
 # client/src/gui/views/default.rs
 default_view:

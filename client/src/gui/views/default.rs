@@ -250,6 +250,11 @@ impl DefaultView {
             None => content,
         };
 
+        let content = match server_browser_panel_component.add_server_modal() {
+            Some(modal) => layered(content, modal),
+            None => content,
+        };
+
         // The mandatory launcher-update dialog sits above even the game's own
         // prompt - an out-of-date launcher may not be able to fetch a working game
         // manifest at all, so it takes priority.
@@ -315,11 +320,16 @@ impl DefaultView {
                             )
                         },
                     ),
-                    Command::perform(ServerBrowserPanelComponent::fetch(), |update| {
-                        DefaultViewMessage::ServerBrowserPanel(
-                            ServerBrowserPanelMessage::UpdateServerList(update),
-                        )
-                    }),
+                    Command::perform(
+                        ServerBrowserPanelComponent::fetch(
+                            active_profile.custom_servers.clone(),
+                        ),
+                        |update| {
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::UpdateServerList(update),
+                            )
+                        },
+                    ),
                     Command::perform(
                         AnnouncementPanelComponent::fetch(
                             api_version_url,
@@ -381,7 +391,10 @@ impl DefaultView {
                 }
             },
             DefaultViewMessage::ServerBrowserPanel(msg) => {
-                if let Some(command) = self.server_browser_panel_component.update(msg) {
+                if let Some(command) = self
+                    .server_browser_panel_component
+                    .update(msg, active_profile)
+                {
                     return command;
                 }
             },

@@ -57,6 +57,11 @@ pub struct Profile {
     /// still load, falling back to `Language::English`.
     #[serde(default)]
     pub language: Language,
+    /// Servers the player added manually by IP/DNS name, in addition to the curated
+    /// list fetched from `OFFICIAL_SERVER_LIST`. `#[serde(default)]` for the same
+    /// backward-compat reason as the fields above.
+    #[serde(default)]
+    pub custom_servers: Vec<veloren_serverbrowser_api::GameServer>,
 
     #[serde(skip)]
     pub supported_wgpu_backends: Vec<WgpuBackend>,
@@ -264,6 +269,7 @@ impl Profile {
             auto_update_launcher: false,
             pending_launcher_update_notice: None,
             language: Language::default(),
+            custom_servers: Vec::new(),
             supported_wgpu_backends: Vec::new(),
             wgpu_device: WgpuDevice::Auto,
             supported_wgpu_devices: Vec::new(),

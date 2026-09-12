@@ -9,15 +9,21 @@ use crate::{
     consts::{OFFICIAL_SERVER_LIST, SERVER_LISTING_REQUEST_URL},
     gui::{
         components::GamePanelMessage,
+        custom_widgets::modal_shell,
         style::{
+            ARCANE_500,
             button::{BrowserButtonStyle, ButtonStyle, ServerListEntryButtonState},
             container::ContainerStyle,
             text::TextStyle,
         },
-        views::default::{DefaultViewMessage, Interaction},
+        views::{
+            Action,
+            default::{DefaultViewMessage, Interaction},
+        },
         widget::*,
     },
     net,
+    profiles::Profile,
     server_list::fetch_server_list,
 };
 use consts::OFFICIAL_AUTH_SERVER;
@@ -26,11 +32,11 @@ use iced::{
     alignment::{Horizontal, Vertical},
     widget::{
         Image, button, column, container, horizontal_rule, image, image::Handle, row,
-        scrollable, text, tooltip, tooltip::Position,
+        scrollable, text, text_input, tooltip, tooltip::Position,
     },
 };
 use rust_i18n::t;
-use std::{borrow::Cow, cmp::min, time::Duration};
+use std::{borrow::Cow, cmp::min, collections::HashMap, time::Duration};
 use tracing::debug;
 use url::Url;
 use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
@@ -44,6 +50,23 @@ pub struct ServerBrowserEntry {
     ping: Option<Duration>,
     server_info: Option<QueryServerInfo>,
     query_client: SkipDebugClone<Option<QueryClient>>,
+    source: ServerEntrySource,
+}
+
+/// Where a `ServerBrowserEntry` came from - the curated list fetched from
+/// `OFFICIAL_SERVER_LIST`, or typed in by the player. Only `Custom` entries are
+/// removable and get the "unverified" badge - see Matías's request to let players
+/// add a server by IP/DNS name, plus his concern about accidentally connecting to a
+/// vanilla Veloren server or an unrelated fork. Today this can only confirm the
+/// address speaks the query-server protocol at all (see `AddCustomServerSubmit`);
+/// confirming it's specifically a Xindeler-compatible build needs a protocol-level
+/// identity field that doesn't exist yet (tracked separately with the
+/// xindeler-new-horizon side).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum ServerEntrySource {
+    #[default]
+    Official,
+    Custom,
 }
 
 /// Newtype that skips debug and when the inner type is an option clones will always
@@ -67,6 +90,7 @@ impl From<GameServer> for ServerBrowserEntry {
             ping: None,
             server_info: None,
             query_client: SkipDebugClone(None),
+            source: ServerEntrySource::Official,
         }
     }
 }
@@ -83,6 +107,19 @@ pub enum ServerBrowserPanelMessage {
         query_client: SkipDebugClone<Option<QueryClient>>,
     },
     SortServers(ServerSortOrder),
+    ShowAddServerForm,
+    AddCustomServerAddressChanged(String),
+    AddCustomServerPortChanged(String),
+    AddCustomServerCancelled,
+    AddCustomServerSubmit,
+    /// Result of pinging the typed address via the query-server protocol - `Some`
+    /// means it answered (so it's at least a Veloren-family game server), `None`
+    /// means it didn't respond at all.
+    AddCustomServerValidated(Option<QueryServerInfo>),
+    RemoveCustomServer {
+        address: String,
+        port: u16,
+    },
 }
 
 #[derive(Debug, Default, Clone)]
@@ -91,11 +128,32 @@ pub struct ServerBrowserPanelComponent {
     selected_index: Option<usize>,
     server_list_fetch_error: bool,
     last_sort_ordering: Option<ServerSortOrder>,
+    add_server_form: Option<AddServerForm>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct AddServerForm {
+    address: String,
+    port: String,
+    state: AddServerFormState,
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+enum AddServerFormState {
+    #[default]
+    Editing,
+    Validating,
+    Error(String),
 }
 
 impl ServerBrowserPanelComponent {
-    pub(crate) async fn fetch() -> Result<Option<Self>> {
-        let servers: Vec<ServerBrowserEntry>;
+    /// `custom_servers` are the player's manually-added servers
+    /// (`Profile::custom_servers`), merged in regardless of whether the official list
+    /// fetch below succeeds, so a player's own servers still show up even when
+    /// `OFFICIAL_SERVER_LIST` is unreachable (a real scenario found while building
+    /// this: `serverlist.xindeler.com` didn't resolve at all while this was written).
+    pub(crate) async fn fetch(custom_servers: Vec<GameServer>) -> Result<Option<Self>> {
+        let mut servers: Vec<ServerBrowserEntry>;
         let mut server_list_fetch_error = false;
 
         if let Ok(server_list) =
@@ -113,11 +171,17 @@ impl ServerBrowserPanelComponent {
             server_list_fetch_error = true;
         }
 
+        servers.extend(custom_servers.into_iter().map(|server| ServerBrowserEntry {
+            source: ServerEntrySource::Custom,
+            ..ServerBrowserEntry::from(server)
+        }));
+
         Ok(Some(Self {
             servers,
             selected_index: None,
             last_sort_ordering: None,
             server_list_fetch_error,
+            add_server_form: None,
         }))
     }
 
@@ -171,6 +235,23 @@ impl ServerBrowserPanelComponent {
                                 Interaction::OpenURL(
                                     SERVER_LISTING_REQUEST_URL.to_string(),
                                 ),
+                            ))
+                            .padding([4, 10, 0, 10])
+                            .height(Length::Fixed(20.0))
+                            .style(ButtonStyle::Chip(BrowserButtonStyle::Extra)),
+                        )
+                        .height(Length::Fill)
+                        .align_y(Vertical::Center)
+                        .padding([1, 10, 0, 8]),
+                    )
+                    .push(
+                        container(
+                            button(
+                                text(t!("server_browser_panel.add_server_button"))
+                                    .size(10),
+                            )
+                            .on_press(DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::ShowAddServerForm,
                             ))
                             .padding([4, 10, 0, 10])
                             .height(Length::Fixed(20.0))
@@ -301,6 +382,20 @@ impl ServerBrowserPanelComponent {
                 );
             }
 
+            if server_entry.source == ServerEntrySource::Custom {
+                status_icons = status_icons.push(
+                    tooltip(
+                        text(t!("server_browser_panel.custom_server_badge"))
+                            .size(9)
+                            .style(TextStyle::Muted),
+                        text(t!("server_browser_panel.custom_server_tooltip")).size(14),
+                        Position::Right,
+                    )
+                    .style(ContainerStyle::Tooltip)
+                    .gap(5),
+                );
+            }
+
             let row = row![]
                 .width(Length::Fill)
                 .align_items(Alignment::Center)
@@ -381,9 +476,31 @@ impl ServerBrowserPanelComponent {
                 ))
                 .style(row_style)
                 .height(Length::Fixed(30.0))
+                .width(Length::Fill)
                 .padding(0);
 
-            server_list = server_list.push(select_row_button);
+            let mut list_row = row![]
+                .align_items(Alignment::Center)
+                .push(select_row_button);
+            if server_entry.source == ServerEntrySource::Custom {
+                list_row = list_row.push(
+                    container(
+                        button(text("x").size(14).style(TextStyle::Muted))
+                            .style(ButtonStyle::Transparent)
+                            .padding(0)
+                            .on_press(DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::RemoveCustomServer {
+                                    address: server_entry.server.address.clone(),
+                                    port: server_entry.server.port,
+                                },
+                            )),
+                    )
+                    .width(Length::Fixed(ICON_COLUMN_WIDTH))
+                    .align_x(Horizontal::Center),
+                );
+            }
+
+            server_list = server_list.push(list_row);
         }
 
         let mut col = column![].push(
@@ -393,7 +510,11 @@ impl ServerBrowserPanelComponent {
                 .style(ContainerStyle::ChangelogHeader),
         );
 
-        if !self.server_list_fetch_error {
+        // Only show the hard error state when there's truly nothing to show - the
+        // official list can be unreachable while the player still has custom servers
+        // of their own (this genuinely happens: `OFFICIAL_SERVER_LIST` was found
+        // unreachable while this was built).
+        if !self.server_list_fetch_error || !self.servers.is_empty() {
             col = col
                 .push(column_headings.height(Length::Shrink))
                 .push(scrollable(server_list).height(Length::Fill));
@@ -612,9 +733,95 @@ impl ServerBrowserPanelComponent {
         server_browser_container.into()
     }
 
+    /// The "add a custom server" dialog, when it's open - `default.rs` layers this on
+    /// top of the whole window, same as the update prompts.
+    pub fn add_server_modal(&self) -> Option<Element<'_, DefaultViewMessage>> {
+        let form = self.add_server_form.as_ref()?;
+
+        let is_validating = form.state == AddServerFormState::Validating;
+
+        let mut body = column![]
+            .spacing(10)
+            .push(
+                text_input(
+                    &t!("server_browser_panel.add_server_address_placeholder"),
+                    &form.address,
+                )
+                .on_input(|address| {
+                    DefaultViewMessage::ServerBrowserPanel(
+                        ServerBrowserPanelMessage::AddCustomServerAddressChanged(address),
+                    )
+                })
+                .padding(7)
+                .size(13),
+            )
+            .push(
+                text_input(
+                    &t!("server_browser_panel.add_server_port_placeholder"),
+                    &form.port,
+                )
+                .on_input(|port| {
+                    DefaultViewMessage::ServerBrowserPanel(
+                        ServerBrowserPanelMessage::AddCustomServerPortChanged(port),
+                    )
+                })
+                .padding(7)
+                .size(13),
+            );
+
+        match &form.state {
+            AddServerFormState::Error(message) => {
+                body = body.push(text(message.clone()).size(12).style(TextStyle::Danger));
+            },
+            AddServerFormState::Validating => {
+                body = body.push(
+                    text(t!("server_browser_panel.add_server_validating"))
+                        .size(12)
+                        .style(TextStyle::Muted),
+                );
+            },
+            AddServerFormState::Editing => {},
+        }
+
+        let mut add_button = button(
+            text(t!("server_browser_panel.add_server_confirm"))
+                .font(POPPINS_MEDIUM_FONT)
+                .size(14),
+        )
+        .style(ButtonStyle::Primary)
+        .padding([10, 22]);
+        if !is_validating {
+            add_button = add_button.on_press(DefaultViewMessage::ServerBrowserPanel(
+                ServerBrowserPanelMessage::AddCustomServerSubmit,
+            ));
+        }
+
+        let cancel_button = button(
+            text(t!("server_browser_panel.add_server_cancel"))
+                .font(POPPINS_MEDIUM_FONT)
+                .size(14),
+        )
+        .style(ButtonStyle::Ghost)
+        .padding([10, 18])
+        .on_press(DefaultViewMessage::ServerBrowserPanel(
+            ServerBrowserPanelMessage::AddCustomServerCancelled,
+        ));
+
+        let actions = row![].spacing(10).push(cancel_button).push(add_button);
+
+        Some(modal_shell(
+            ARCANE_500,
+            t!("server_browser_panel.add_server_eyebrow"),
+            t!("server_browser_panel.add_server_title"),
+            body.into(),
+            Some(actions.into()),
+        ))
+    }
+
     pub fn update(
         &mut self,
         msg: ServerBrowserPanelMessage,
+        active_profile: &Profile,
     ) -> Option<Command<DefaultViewMessage>> {
         match msg {
             ServerBrowserPanelMessage::UpdateServerList(result) => match result {
@@ -733,6 +940,148 @@ impl ServerBrowserPanelComponent {
                 self.sort_servers(order);
                 self.last_sort_ordering = Some(order);
                 None
+            },
+            ServerBrowserPanelMessage::ShowAddServerForm => {
+                self.add_server_form = Some(AddServerForm::default());
+                None
+            },
+            ServerBrowserPanelMessage::AddCustomServerCancelled => {
+                self.add_server_form = None;
+                None
+            },
+            ServerBrowserPanelMessage::AddCustomServerAddressChanged(address) => {
+                if let Some(form) = &mut self.add_server_form {
+                    form.address = address;
+                    form.state = AddServerFormState::Editing;
+                }
+                None
+            },
+            ServerBrowserPanelMessage::AddCustomServerPortChanged(port) => {
+                if let Some(form) = &mut self.add_server_form {
+                    form.port = port;
+                    form.state = AddServerFormState::Editing;
+                }
+                None
+            },
+            ServerBrowserPanelMessage::AddCustomServerSubmit => {
+                let Some(form) = &mut self.add_server_form else {
+                    return None;
+                };
+
+                let address = form.address.trim().to_owned();
+                if address.is_empty() {
+                    form.state = AddServerFormState::Error(
+                        t!("server_browser_panel.add_server_error_empty").into_owned(),
+                    );
+                    return None;
+                }
+                if !form.port.trim().is_empty()
+                    && form.port.trim().parse::<u16>().is_err()
+                {
+                    form.state = AddServerFormState::Error(
+                        t!("server_browser_panel.add_server_error_port").into_owned(),
+                    );
+                    return None;
+                }
+
+                form.state = AddServerFormState::Validating;
+
+                Some(Command::perform(
+                    async move {
+                        let mut client = crate::net::ping::create_client(
+                            &address,
+                            net::DEFAULT_QUERY_PORT,
+                        )
+                        .await?;
+                        crate::net::ping::perform_ping(&mut client)
+                            .await
+                            .ok()
+                            .map(|(_ping, info)| info)
+                    },
+                    |info| {
+                        DefaultViewMessage::ServerBrowserPanel(
+                            ServerBrowserPanelMessage::AddCustomServerValidated(info),
+                        )
+                    },
+                ))
+            },
+            ServerBrowserPanelMessage::AddCustomServerValidated(info) => {
+                let Some(form) = &self.add_server_form else {
+                    return None;
+                };
+
+                match info {
+                    Some(info) => {
+                        debug!(?info, "Validated custom server, adding it");
+
+                        let address = form.address.trim().to_owned();
+                        let port = form
+                            .port
+                            .trim()
+                            .parse::<u16>()
+                            .unwrap_or(net::DEFAULT_GAME_PORT);
+
+                        let game_server = GameServer {
+                            name: address.clone(),
+                            address,
+                            port,
+                            description: String::new(),
+                            location: None,
+                            auth_server: OFFICIAL_AUTH_SERVER.to_owned(),
+                            query_port: Some(net::DEFAULT_QUERY_PORT),
+                            channel: None,
+                            official: false,
+                            extra: HashMap::new(),
+                        };
+
+                        let mut profile = active_profile.clone();
+                        let already_added = profile.custom_servers.iter().any(|s| {
+                            s.address == game_server.address && s.port == game_server.port
+                        });
+                        if !already_added {
+                            profile.custom_servers.push(game_server.clone());
+                        }
+
+                        self.servers.push(ServerBrowserEntry {
+                            source: ServerEntrySource::Custom,
+                            ..ServerBrowserEntry::from(game_server)
+                        });
+                        self.sort_servers(self.last_sort_ordering.unwrap_or_default());
+                        self.add_server_form = None;
+
+                        Some(Command::perform(
+                            async { Action::UpdateProfile(profile) },
+                            DefaultViewMessage::Action,
+                        ))
+                    },
+                    None => {
+                        if let Some(form) = &mut self.add_server_form {
+                            form.state = AddServerFormState::Error(
+                                t!("server_browser_panel.add_server_error_unreachable")
+                                    .into_owned(),
+                            );
+                        }
+                        None
+                    },
+                }
+            },
+            ServerBrowserPanelMessage::RemoveCustomServer { address, port } => {
+                let mut profile = active_profile.clone();
+                profile
+                    .custom_servers
+                    .retain(|s| !(s.address == address && s.port == port));
+
+                self.servers.retain(|entry| {
+                    !(entry.source == ServerEntrySource::Custom
+                        && entry.server.address == address
+                        && entry.server.port == port)
+                });
+                self.selected_index = None;
+
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
             },
         }
     }
