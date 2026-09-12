@@ -466,17 +466,34 @@ impl SettingsPanelComponent {
             )
             .width(Length::FillPortion(1));
 
-        let graphics_section = column![]
-            .spacing(12)
-            .push(section_label("Graphics"))
-            .push(row![].push(graphics_device))
-            .push(
+        let mut graphics_section = column![].spacing(12).push(section_label("Graphics"));
+        // Device/backend detection needs to ask the installed game binary what it
+        // supports - before that, these two only offer "Auto" (see
+        // docs/design/gpu-detection-feasibility.md). Only worth explaining while
+        // it's actually true.
+        if !active_profile.installed() {
+            graphics_section = graphics_section.push(
                 row![]
-                    .spacing(12)
-                    .align_items(Alignment::End)
-                    .push(graphics_mode)
-                    .push(log_level),
+                    .spacing(6)
+                    .push(text("ⓘ").size(11).style(TextStyle::Accent))
+                    .push(
+                        text(
+                            "Limited to Auto until the game is installed and has run \
+                             once - that's what lets it report your real GPU and \
+                             supported rendering backends.",
+                        )
+                        .size(11)
+                        .style(TextStyle::Muted),
+                    ),
             );
+        }
+        graphics_section = graphics_section.push(row![].push(graphics_device)).push(
+            row![]
+                .spacing(12)
+                .align_items(Alignment::End)
+                .push(graphics_mode)
+                .push(log_level),
+        );
 
         let game_section = column![]
             .spacing(12)
