@@ -1,9 +1,9 @@
 use crate::{
     Result,
     assets::{
-        GLOBE_ICON, KEY_ICON, PING_ERROR_ICON, PING_NONE_ICON, PING1_ICON, PING2_ICON,
-        PING3_ICON, PING4_ICON, POPPINS_MEDIUM_FONT, STAR_ICON, UNIVERSAL_FONT,
-        UP_RIGHT_ARROW_ICON,
+        GLOBE_ICON, KEY_ICON, PENCIL_ICON, PING_ERROR_ICON, PING_NONE_ICON, PING1_ICON,
+        PING2_ICON, PING3_ICON, PING4_ICON, POPPINS_MEDIUM_FONT, STAR_ICON, TRASH_ICON,
+        UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::{OFFICIAL_SERVER_LIST, SERVER_LISTING_REQUEST_URL},
@@ -108,6 +108,11 @@ pub enum ServerBrowserPanelMessage {
     },
     SortServers(ServerSortOrder),
     ShowAddServerForm,
+    ShowEditServerForm {
+        address: String,
+        port: u16,
+    },
+    AddCustomServerNameChanged(String),
     AddCustomServerAddressChanged(String),
     AddCustomServerPortChanged(String),
     AddCustomServerCancelled,
@@ -133,9 +138,14 @@ pub struct ServerBrowserPanelComponent {
 
 #[derive(Debug, Clone, Default)]
 struct AddServerForm {
+    name: String,
     address: String,
     port: String,
     state: AddServerFormState,
+    /// The address/port this entry was found under before editing, so submitting
+    /// can replace it instead of adding a duplicate. `None` means this form is
+    /// adding a brand new server rather than editing an existing one.
+    editing_original: Option<(String, u16)>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -383,11 +393,15 @@ impl ServerBrowserPanelComponent {
             }
 
             if server_entry.source == ServerEntrySource::Custom {
+                // A text badge here doesn't fit `ICON_COLUMN_WIDTH` and bleeds into
+                // the name column, so this reuses the same small status-dot pattern
+                // `modal_shell`'s eyebrow uses instead of trying to fit a word.
                 status_icons = status_icons.push(
                     tooltip(
-                        text(t!("server_browser_panel.custom_server_badge"))
-                            .size(9)
-                            .style(TextStyle::Muted),
+                        container(text(""))
+                            .width(Length::Fixed(8.0))
+                            .height(Length::Fixed(8.0))
+                            .style(ContainerStyle::StatusDot(ARCANE_500)),
                         text(t!("server_browser_panel.custom_server_tooltip")).size(14),
                         Position::Right,
                     )
@@ -483,19 +497,59 @@ impl ServerBrowserPanelComponent {
                 .align_items(Alignment::Center)
                 .push(select_row_button);
             if server_entry.source == ServerEntrySource::Custom {
+                let edit_button = tooltip(
+                    button(
+                        Image::new(Handle::from_memory(PENCIL_ICON.to_vec()))
+                            .height(Length::Fixed(13.0))
+                            .width(Length::Fixed(13.0)),
+                    )
+                    .style(ButtonStyle::Transparent)
+                    .padding(0)
+                    .on_press(
+                        DefaultViewMessage::ServerBrowserPanel(
+                            ServerBrowserPanelMessage::ShowEditServerForm {
+                                address: server_entry.server.address.clone(),
+                                port: server_entry.server.port,
+                            },
+                        ),
+                    ),
+                    text(t!("server_browser_panel.edit_server_tooltip")).size(14),
+                    Position::Left,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5);
+
+                let remove_button = tooltip(
+                    button(
+                        Image::new(Handle::from_memory(TRASH_ICON.to_vec()))
+                            .height(Length::Fixed(13.0))
+                            .width(Length::Fixed(13.0)),
+                    )
+                    .style(ButtonStyle::Transparent)
+                    .padding(0)
+                    .on_press(
+                        DefaultViewMessage::ServerBrowserPanel(
+                            ServerBrowserPanelMessage::RemoveCustomServer {
+                                address: server_entry.server.address.clone(),
+                                port: server_entry.server.port,
+                            },
+                        ),
+                    ),
+                    text(t!("server_browser_panel.remove_server_tooltip")).size(14),
+                    Position::Left,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5);
+
                 list_row = list_row.push(
                     container(
-                        button(text("x").size(14).style(TextStyle::Muted))
-                            .style(ButtonStyle::Transparent)
-                            .padding(0)
-                            .on_press(DefaultViewMessage::ServerBrowserPanel(
-                                ServerBrowserPanelMessage::RemoveCustomServer {
-                                    address: server_entry.server.address.clone(),
-                                    port: server_entry.server.port,
-                                },
-                            )),
+                        row![]
+                            .spacing(6)
+                            .align_items(Alignment::Center)
+                            .push(edit_button)
+                            .push(remove_button),
                     )
-                    .width(Length::Fixed(ICON_COLUMN_WIDTH))
+                    .width(Length::Fixed(ICON_COLUMN_WIDTH + 14.0))
                     .align_x(Horizontal::Center),
                 );
             }
@@ -739,9 +793,23 @@ impl ServerBrowserPanelComponent {
         let form = self.add_server_form.as_ref()?;
 
         let is_validating = form.state == AddServerFormState::Validating;
+        let is_editing = form.editing_original.is_some();
 
         let mut body = column![]
             .spacing(10)
+            .push(
+                text_input(
+                    &t!("server_browser_panel.add_server_name_placeholder"),
+                    &form.name,
+                )
+                .on_input(|name| {
+                    DefaultViewMessage::ServerBrowserPanel(
+                        ServerBrowserPanelMessage::AddCustomServerNameChanged(name),
+                    )
+                })
+                .padding(7)
+                .size(13),
+            )
             .push(
                 text_input(
                     &t!("server_browser_panel.add_server_address_placeholder"),
@@ -783,13 +851,15 @@ impl ServerBrowserPanelComponent {
             AddServerFormState::Editing => {},
         }
 
-        let mut add_button = button(
-            text(t!("server_browser_panel.add_server_confirm"))
-                .font(POPPINS_MEDIUM_FONT)
-                .size(14),
-        )
-        .style(ButtonStyle::Primary)
-        .padding([10, 22]);
+        let confirm_label = if is_editing {
+            t!("server_browser_panel.add_server_save")
+        } else {
+            t!("server_browser_panel.add_server_confirm")
+        };
+        let mut add_button =
+            button(text(confirm_label).font(POPPINS_MEDIUM_FONT).size(14))
+                .style(ButtonStyle::Primary)
+                .padding([10, 22]);
         if !is_validating {
             add_button = add_button.on_press(DefaultViewMessage::ServerBrowserPanel(
                 ServerBrowserPanelMessage::AddCustomServerSubmit,
@@ -809,10 +879,16 @@ impl ServerBrowserPanelComponent {
 
         let actions = row![].spacing(10).push(cancel_button).push(add_button);
 
+        let title = if is_editing {
+            t!("server_browser_panel.add_server_edit_title")
+        } else {
+            t!("server_browser_panel.add_server_title")
+        };
+
         Some(modal_shell(
             ARCANE_500,
             t!("server_browser_panel.add_server_eyebrow"),
-            t!("server_browser_panel.add_server_title"),
+            title,
             body.into(),
             Some(actions.into()),
         ))
@@ -945,8 +1021,30 @@ impl ServerBrowserPanelComponent {
                 self.add_server_form = Some(AddServerForm::default());
                 None
             },
+            ServerBrowserPanelMessage::ShowEditServerForm { address, port } => {
+                if let Some(entry) = self.servers.iter().find(|entry| {
+                    entry.source == ServerEntrySource::Custom
+                        && entry.server.address == address
+                        && entry.server.port == port
+                }) {
+                    self.add_server_form = Some(AddServerForm {
+                        name: entry.server.name.clone(),
+                        address: entry.server.address.clone(),
+                        port: entry.server.port.to_string(),
+                        state: AddServerFormState::Editing,
+                        editing_original: Some((address, port)),
+                    });
+                }
+                None
+            },
             ServerBrowserPanelMessage::AddCustomServerCancelled => {
                 self.add_server_form = None;
+                None
+            },
+            ServerBrowserPanelMessage::AddCustomServerNameChanged(name) => {
+                if let Some(form) = &mut self.add_server_form {
+                    form.name = name;
+                }
                 None
             },
             ServerBrowserPanelMessage::AddCustomServerAddressChanged(address) => {
@@ -1012,7 +1110,7 @@ impl ServerBrowserPanelComponent {
 
                 match info {
                     Some(info) => {
-                        debug!(?info, "Validated custom server, adding it");
+                        debug!(?info, "Validated custom server, saving it");
 
                         let address = form.address.trim().to_owned();
                         let port = form
@@ -1020,9 +1118,16 @@ impl ServerBrowserPanelComponent {
                             .trim()
                             .parse::<u16>()
                             .unwrap_or(net::DEFAULT_GAME_PORT);
+                        let name = form.name.trim();
+                        let name = if name.is_empty() {
+                            address.clone()
+                        } else {
+                            name.to_owned()
+                        };
+                        let editing_original = form.editing_original.clone();
 
                         let game_server = GameServer {
-                            name: address.clone(),
+                            name,
                             address,
                             port,
                             description: String::new(),
@@ -1035,6 +1140,19 @@ impl ServerBrowserPanelComponent {
                         };
 
                         let mut profile = active_profile.clone();
+                        // Editing an existing entry replaces it (by its original
+                        // address/port) instead of leaving a stale duplicate behind.
+                        if let Some((old_address, old_port)) = &editing_original {
+                            profile.custom_servers.retain(|s| {
+                                !(&s.address == old_address && &s.port == old_port)
+                            });
+                            self.servers.retain(|entry| {
+                                !(entry.source == ServerEntrySource::Custom
+                                    && &entry.server.address == old_address
+                                    && &entry.server.port == old_port)
+                            });
+                        }
+
                         let already_added = profile.custom_servers.iter().any(|s| {
                             s.address == game_server.address && s.port == game_server.port
                         });
@@ -1048,6 +1166,7 @@ impl ServerBrowserPanelComponent {
                         });
                         self.sort_servers(self.last_sort_ordering.unwrap_or_default());
                         self.add_server_form = None;
+                        self.selected_index = None;
 
                         Some(Command::perform(
                             async { Action::UpdateProfile(profile) },
