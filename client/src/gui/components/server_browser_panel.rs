@@ -130,11 +130,15 @@ pub enum ServerBrowserPanelMessage {
     AddCustomServerCancelled,
     AddCustomServerSubmit,
     /// Result of pinging the typed address via the query-server protocol and, if
-    /// that succeeded, following up with an `Identity` check - `Some((info,
-    /// verified))` means it answered (so it's at least a Veloren-family game
-    /// server), with `verified` saying whether `Identity` confirmed it's
-    /// specifically Xindeler. `None` means it didn't respond at all.
-    AddCustomServerValidated(Option<(QueryServerInfo, bool)>),
+    /// that succeeded, following up with an `Identity` check and a one-shot IP
+    /// geolocation lookup - `Some((info, verified, location))` means it answered (so
+    /// it's at least a Veloren-family game server), with `verified` saying whether
+    /// `Identity` confirmed it's specifically Xindeler, and `location` the
+    /// best-effort country guess (`None` if the lookup failed - never blocks adding
+    /// the server). `None` means the ping itself didn't respond at all.
+    AddCustomServerValidated(
+        Option<(QueryServerInfo, bool, Option<country_parser::Country>)>,
+    ),
     RemoveCustomServer {
         address: String,
         port: u16,
@@ -1137,7 +1141,13 @@ impl ServerBrowserPanelComponent {
                             crate::net::ping::perform_ping(&mut client).await.ok()?;
                         let verified =
                             crate::net::ping::perform_identity_check(&mut client).await;
-                        Some((info, verified))
+                        // Best-effort, one-shot - only at add/edit time, never
+                        // repeated on refresh. A failed lookup shouldn't block adding
+                        // the server, so this stays `None` rather than short-circuit.
+                        let location =
+                            crate::net::geolocation::lookup_country(client.addr.ip())
+                                .await;
+                        Some((info, verified, location))
                     },
                     |result| {
                         DefaultViewMessage::ServerBrowserPanel(
@@ -1152,8 +1162,13 @@ impl ServerBrowserPanelComponent {
                 };
 
                 match info {
-                    Some((info, verified)) => {
-                        debug!(?info, verified, "Validated custom server, saving it");
+                    Some((info, verified, location)) => {
+                        debug!(
+                            ?info,
+                            verified,
+                            ?location,
+                            "Validated custom server, saving it"
+                        );
 
                         let address = form.address.trim().to_owned();
                         let port = form
@@ -1174,7 +1189,7 @@ impl ServerBrowserPanelComponent {
                             address,
                             port,
                             description: String::new(),
-                            location: None,
+                            location,
                             auth_server: OFFICIAL_AUTH_SERVER.to_owned(),
                             query_port: Some(net::DEFAULT_QUERY_PORT),
                             channel: None,
