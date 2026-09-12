@@ -124,7 +124,7 @@ server_browser_panel:
   add_server_edit_title: "Editar servidor"
   add_server_name_placeholder: "Nombre (opcional)"
   add_server_address_placeholder: "Dirección IP o nombre de dominio"
-  add_server_port_placeholder: "Puerto (opcional, por defecto 14004)"
+  add_server_port_placeholder: "Puerto"
   add_server_confirm: "Agregar"
   add_server_save: "Guardar"
   add_server_cancel: "Cancelar"
