@@ -16,6 +16,7 @@ use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, image, scrollable, text},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -104,7 +105,7 @@ impl NewsPost {
             )
         } else {
             container(
-                text("Loading...")
+                text(t!("news_panel.loading"))
                     .size(14)
                     .horizontal_alignment(Horizontal::Center)
                     .vertical_alignment(Vertical::Center)
@@ -126,7 +127,7 @@ impl NewsPost {
                         column![]
                             .spacing(3)
                             .push(
-                                text("DEVELOPMENT")
+                                text(t!("news_panel.eyebrow"))
                                     .size(10)
                                     .font(POPPINS_MEDIUM_FONT)
                                     .style(TextStyle::Accent),

@@ -30,6 +30,7 @@ use iced::{
         button, column, container, image::Handle, progress_bar, row, scrollable, text,
     },
 };
+use rust_i18n::t;
 use std::time::Duration;
 
 /// How long each background image stays up before rotating to the next one.
@@ -289,10 +290,14 @@ impl DefaultView {
                         DefaultViewMessage::Action,
                     ));
                     commands.push(Command::perform(async {}, move |_| {
-                        DefaultViewMessage::ShowToast(format!(
-                            "Launcher updated from v{old_version} to v{}",
-                            env!("CARGO_PKG_VERSION")
-                        ))
+                        DefaultViewMessage::ShowToast(
+                            t!(
+                                "default_view.toast_launcher_updated",
+                                old_version = old_version,
+                                new_version = env!("CARGO_PKG_VERSION")
+                            )
+                            .into_owned(),
+                        )
                     }));
                 }
 
@@ -478,7 +483,7 @@ impl DefaultView {
 fn launcher_update_dialog(
     state: &LauncherUpdateState,
 ) -> Element<'static, DefaultViewMessage> {
-    fn primary_action(label: &'static str) -> Element<'static, DefaultViewMessage> {
+    fn primary_action(label: impl ToString) -> Element<'static, DefaultViewMessage> {
         button(text(label).font(crate::assets::POPPINS_BOLD_FONT).size(14))
             .style(ButtonStyle::Primary)
             .padding([10, 22])
@@ -488,29 +493,28 @@ fn launcher_update_dialog(
 
     match state {
         LauncherUpdateState::Prompt(update) => {
-            let body = text(
-                "The launcher needs to update before you can download or play. It only \
-                 takes a moment.",
-            )
-            .size(14)
-            .style(TextStyle::Secondary)
-            .into();
+            let body = text(t!("default_view.launcher_update_body"))
+                .size(14)
+                .style(TextStyle::Secondary)
+                .into();
             modal_shell(
                 GOLD_500,
-                "LAUNCHER UPDATE REQUIRED",
-                format!("Update to {}", update.version),
+                t!("default_view.launcher_update_eyebrow"),
+                t!(
+                    "default_view.launcher_update_title",
+                    version = update.version
+                ),
                 body,
-                Some(primary_action("Update now")),
+                Some(primary_action(t!("default_view.launcher_update_confirm"))),
             )
         },
         LauncherUpdateState::Applying(update) => {
             let body = column![]
                 .spacing(16)
                 .push(
-                    text(format!(
-                        "Downloading and installing {}. The launcher will restart on \
-                         its own.",
-                        update.version
+                    text(t!(
+                        "default_view.launcher_update_applying_body",
+                        version = update.version
                     ))
                     .size(14)
                     .style(TextStyle::Secondary),
@@ -519,8 +523,8 @@ fn launcher_update_dialog(
                 .into();
             modal_shell(
                 ARCANE_500,
-                "INSTALLING",
-                "Updating the launcher…",
+                t!("default_view.launcher_update_applying_eyebrow"),
+                t!("default_view.launcher_update_applying_title"),
                 body,
                 None,
             )
@@ -529,7 +533,7 @@ fn launcher_update_dialog(
             let body = column![]
                 .spacing(12)
                 .push(
-                    text("Check your connection and try again.")
+                    text(t!("default_view.launcher_update_failed_body"))
                         .size(14)
                         .style(TextStyle::Secondary),
                 )
@@ -541,10 +545,13 @@ fn launcher_update_dialog(
                 .into();
             modal_shell(
                 CRIMSON_500,
-                "UPDATE FAILED",
-                format!("Couldn't update to {}", update.version),
+                t!("default_view.launcher_update_failed_eyebrow"),
+                t!(
+                    "default_view.launcher_update_failed_title",
+                    version = update.version
+                ),
                 body,
-                Some(primary_action("Try again")),
+                Some(primary_action(t!("default_view.launcher_update_retry"))),
             )
         },
     }

@@ -11,7 +11,12 @@ use iced::{
     widget::{column, container, horizontal_rule, horizontal_space, row, text},
 };
 
-pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<'a, T> {
+/// `heading_text` is `impl ToString` rather than `&'a str` so translated headings can
+/// be passed straight in - `text()` copies the content, so nothing is borrowed past
+/// the call.
+pub(crate) fn heading_with_rule<'a, T: 'a, S: ToString>(
+    heading_text: S,
+) -> Element<'a, T> {
     container(
         row![]
             .align_items(Alignment::Center)
@@ -31,12 +36,13 @@ pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<'a,
 /// change from the old centred-everything layout).
 pub(crate) fn modal_shell<'a, Message: 'a>(
     eyebrow_color: Color,
-    eyebrow_label: &'static str,
+    eyebrow_label: impl Into<String>,
     title: impl Into<String>,
     body: Element<'a, Message>,
     actions: Option<Element<'a, Message>>,
 ) -> Element<'a, Message> {
     let title = title.into();
+    let eyebrow_label = eyebrow_label.into();
     let eyebrow = row![]
         .spacing(8)
         .align_items(Alignment::Center)

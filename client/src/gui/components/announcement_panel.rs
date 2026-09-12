@@ -14,6 +14,7 @@ use iced::{
     alignment::Vertical,
     widget::{button, column, container, image, image::Handle, row, text},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -87,16 +88,19 @@ impl AnnouncementPanelComponent {
             (false, None) => {
                 return row![].into();
             },
-            (true, None) => "XindelerUpdater is outdated, please update to the latest \
-                             release!"
-                .to_string(),
+            (true, None) => t!("announcement_panel.outdated").into_owned(),
             (false, Some(msg)) => {
                 let date: chrono::DateTime<chrono::Local> =
                     self.announcement_last_change.into();
-                format!("News from {}: {}", date.format("%Y-%m-%d %H:%M"), msg)
+                t!(
+                    "announcement_panel.news",
+                    date = date.format("%Y-%m-%d %H:%M"),
+                    message = msg
+                )
+                .into_owned()
             },
             (true, Some(msg)) => {
-                format!("XindelerUpdater is outdated! News: {}", msg)
+                t!("announcement_panel.outdated_with_news", message = msg).into_owned()
             },
         };
 
@@ -117,7 +121,7 @@ impl AnnouncementPanelComponent {
                 container(
                     button(
                         row![
-                            text("Download XindelerUpdater").size(11),
+                            text(t!("announcement_panel.download_button")).size(11),
                             image(Handle::from_memory(UP_RIGHT_ARROW_ICON.to_vec(),))
                         ]
                         .spacing(5)

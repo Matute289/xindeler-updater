@@ -29,6 +29,7 @@ use ron::{
     de::from_str,
     ser::{PrettyConfig, to_string_pretty},
 };
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -355,7 +356,7 @@ impl ChangelogPanelComponent {
                 )
                 .push(
                     container(
-                        text("Latest Patch Notes")
+                        text(t!("changelog_panel.heading"))
                             .style(TextStyle::Primary)
                             .size(14)
                             .font(POPPINS_MEDIUM_FONT),
@@ -370,7 +371,7 @@ impl ChangelogPanelComponent {
                         button(
                             row![]
                                 .push(
-                                    text("Recent Changes")
+                                    text(t!("changelog_panel.recent_changes_button"))
                                         .style(TextStyle::Muted)
                                         .size(10)
                                         .font(POPPINS_MEDIUM_FONT)
@@ -439,7 +440,7 @@ impl ChangelogVersion {
         let version_string = match &self.date {
             Some(date) => format!("v{} ({})", self.version, date),
             None => match self.version.as_str() {
-                "Unreleased" => "Nightly".to_string(),
+                "Unreleased" => t!("changelog_panel.nightly_version").into_owned(),
                 _ => format!("v{}", self.version),
             },
         };

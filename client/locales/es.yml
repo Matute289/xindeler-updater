@@ -1,0 +1,134 @@
+_version: 1
+
+# Español (Latinoamérica). Tuteo neutro, tono casual de UI de juego - nada de "usted".
+# Las claves están agrupadas por el módulo de la GUI donde vive cada string, así que
+# este archivo se lee en paralelo con client/src/gui/. Espeja a en.yml clave por clave.
+
+# client/src/gui/components/settings_panel.rs
+settings:
+  heading: "Ajustes"
+  section_general: "General"
+  section_graphics: "Gráficos"
+  section_game: "Juego"
+  section_advanced: "Avanzado"
+  language_label: "IDIOMA"
+  language_tooltip: "El idioma de la interfaz del launcher"
+  graphics_device_label: "TARJETA GRÁFICA"
+  graphics_device_tooltip: "La tarjeta gráfica que va a usar el juego. \nDéjala en Auto a menos que tengas problemas"
+  graphics_mode_label: "MODO GRÁFICO"
+  graphics_mode_tooltip: "El backend de renderizado que va a usar el juego.\nDéjalo en Auto a menos que tengas problemas"
+  graphics_auto_only_note: "Limitado a Auto hasta que el juego esté instalado y se haya ejecutado una vez - solo entonces puede informar tu GPU real y los backends de renderizado compatibles."
+  log_level_label: "NIVEL DE LOG"
+  log_level_tooltip: "Cambia cuánta información escribe el juego en su archivo de log"
+  server_label: "SERVIDOR"
+  server_tooltip: "El servidor desde el que se descarga el juego"
+  channel_label: "CANAL"
+  channel_tooltip: "El canal de descarga que se usa para bajar el juego"
+  assets_override_label: "ASSETS PERSONALIZADOS"
+  assets_override_placeholder: "/ruta/a/la/carpeta/con/tus/assets"
+  assets_override_tooltip: "¡Carpeta donde puedes poner assets modificados para probar cosas o divertirte!"
+  assets_override_dialog_title: "Elige la carpeta donde están tus assets personalizados"
+  env_vars_label: "VARIABLES DE ENTORNO"
+  env_vars_tooltip: "Variables de entorno que se aplican al ejecutar Voxygen"
+  auto_update_game_label: "Actualizar el juego automáticamente"
+  auto_update_launcher_label: "Actualizar el launcher automáticamente"
+  auto_update_note: "Cuando está activo, las versiones nuevas se descargan e instalan solas - sin preguntarte nada, solo un aviso rápido cuando termina."
+  game_version_label: "VERSIÓN DEL JUEGO"
+  launcher_version_label: "VERSIÓN DEL LAUNCHER"
+  version_not_installed: "No instalado"
+
+# client/src/gui/components/game_panel.rs
+game_panel:
+  heading: "Versión del juego"
+  version_prealpha: "Pre-Alpha"
+  version_available: "%{version} disponible"
+  settings_tooltip: "Ajustes"
+  play_button: "JUGAR"
+  play_offline_button: "JUGAR OFFLINE"
+  retry_button: "REINTENTAR"
+  checking_button: "BUSCANDO…"
+  download_button: "DESCARGAR"
+  running_button: "JUGANDO"
+  update_button: "Actualizar"
+  cancel_button: "Cancelar"
+  connect_to_line1: "Conectar al"
+  connect_to_line2: "servidor elegido"
+  server_browser_line1: "Lista de"
+  server_browser_line2: "servidores"
+  step_downloading: "DESCARGANDO"
+  step_unzipping: "DESCOMPRIMIENDO"
+  step_deleting: "ELIMINANDO"
+  step_finalizing: "FINALIZANDO"
+  step_preparing: "PREPARANDO"
+  progress_bytes: "%{downloaded} / %{total}"
+  progress_speed: "%{rate} MB/s"
+  time_remaining_with_hours: "faltan %{hours}:%{minutes}:%{seconds}"
+  time_remaining: "faltan %{minutes}:%{seconds}"
+  update_prompt_eyebrow: "ACTUALIZACIÓN DEL JUEGO"
+  update_prompt_title: "Ya está disponible la versión %{version}"
+  update_prompt_body: "Puedes instalarla ahora, o seguir jugando con tu versión actual y actualizar más tarde."
+  update_prompt_not_now: "Ahora no"
+  update_prompt_update_now: "Actualizar ahora"
+  toast_game_updated: "Juego actualizado a %{version}"
+
+# client/src/gui/components/logo_panel.rs
+logo_panel:
+  game_manual_link: "Manual del juego"
+  community_link: "Comunidad"
+  create_account_link: "Crear cuenta"
+
+# client/src/gui/components/announcement_panel.rs
+announcement_panel:
+  outdated: "¡XindelerUpdater está desactualizado, actualiza a la última versión!"
+  news: "Novedades del %{date}: %{message}"
+  outdated_with_news: "¡XindelerUpdater está desactualizado! Novedades: %{message}"
+  download_button: "Descargar XindelerUpdater"
+
+# client/src/gui/components/changelog_panel.rs
+changelog_panel:
+  heading: "Últimas notas del parche"
+  recent_changes_button: "Cambios recientes"
+  nightly_version: "Nightly"
+
+# client/src/gui/components/news_panel.rs
+news_panel:
+  loading: "Cargando..."
+  eyebrow: "DESARROLLO"
+
+# client/src/gui/components/server_browser_panel.rs
+server_browser_panel:
+  heading: "Lista de servidores"
+  get_listed_button: "Publica tu servidor aquí"
+  column_server: "Servidor"
+  column_location: "Ubicación"
+  column_players: "Jugadores"
+  column_ping: "Ping (ms)"
+  custom_auth_tooltip: "Este servidor usa su propio servidor de autenticación. No inicies sesión aquí salvo que confíes en quien lo administra."
+  official_server_tooltip: "Este es un servidor oficial operado por el proyecto Xindeler"
+  location_unknown: "Desconocida"
+  ping_error: "Error"
+  battlemode_global_pvp: "PvP global"
+  battlemode_global_pve: "PvE global"
+  battlemode_per_player: "Lo elige cada jugador"
+  battlemode: "Modo de combate: %{mode}"
+  game_version: "Versión: %{hash}"
+  no_query_protocol: "No soporta el protocolo de consulta del servidor :("
+  description_label: "Descripción: "
+  email_field: "Email: %{value}"
+  extra_field: "%{name}: %{value}"
+  fetch_error: "Error al obtener la lista de servidores"
+
+# client/src/gui/views/default.rs
+default_view:
+  launcher_update_eyebrow: "ACTUALIZACIÓN OBLIGATORIA DEL LAUNCHER"
+  launcher_update_title: "Actualizar a %{version}"
+  launcher_update_body: "El launcher tiene que actualizarse antes de que puedas descargar o jugar. Es solo un momento."
+  launcher_update_confirm: "Actualizar ahora"
+  launcher_update_applying_eyebrow: "INSTALANDO"
+  launcher_update_applying_title: "Actualizando el launcher…"
+  launcher_update_applying_body: "Descargando e instalando %{version}. El launcher se va a reiniciar solo."
+  launcher_update_failed_eyebrow: "FALLÓ LA ACTUALIZACIÓN"
+  launcher_update_failed_title: "No se pudo actualizar a %{version}"
+  launcher_update_failed_body: "Revisa tu conexión e inténtalo de nuevo."
+  launcher_update_retry: "Reintentar"
+  toast_launcher_updated: "Launcher actualizado de v%{old_version} a v%{new_version}"

@@ -52,6 +52,11 @@ pub struct Profile {
     /// on its next startup instead of silently going quiet.
     #[serde(default)]
     pub pending_launcher_update_notice: Option<String>,
+    /// Language the launcher UI is rendered in. `#[serde(default)]` for the same
+    /// reason as the two fields above: profiles saved before this field existed must
+    /// still load, falling back to `Language::English`.
+    #[serde(default)]
+    pub language: Language,
 
     #[serde(skip)]
     pub supported_wgpu_backends: Vec<WgpuBackend>,
@@ -199,6 +204,41 @@ pub enum LogLevel {
 pub static LOG_LEVELS: &[LogLevel] =
     &[LogLevel::Default, LogLevel::Debug, LogLevel::Trace];
 
+/// The language the launcher's own UI is rendered in. Only affects XindelerUpdater -
+/// the game reads its own language setting from its own config.
+// `Default` is derived rather than hand-written (clippy::derivable_impls), matching
+// how `LogLevel` above declares its own default variant.
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Language {
+    #[default]
+    English,
+    EsLatam,
+}
+
+// Deliberately not `derive_more::Display`: that would render the bare variant ident
+// ("EsLatam") in the settings dropdown. These are the endonyms shown to the user.
+impl std::fmt::Display for Language {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Language::English => "English",
+            Language::EsLatam => "Español (Latinoamérica)",
+        })
+    }
+}
+
+impl Language {
+    /// The locale code handed to `rust_i18n::set_locale`, matching the file names in
+    /// `client/locales/`.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Language::English => "en",
+            Language::EsLatam => "es",
+        }
+    }
+}
+
+pub static LANGUAGES: &[Language] = &[Language::English, Language::EsLatam];
+
 impl Server {
     pub fn url(&self) -> &str {
         match self {
@@ -223,6 +263,7 @@ impl Profile {
             auto_update_game: false,
             auto_update_launcher: false,
             pending_launcher_update_notice: None,
+            language: Language::default(),
             supported_wgpu_backends: Vec::new(),
             wgpu_device: WgpuDevice::Auto,
             supported_wgpu_devices: Vec::new(),
@@ -232,7 +273,7 @@ impl Profile {
     pub fn load() -> Self {
         fs::verify_cache();
         let saved_state_file = fs::savedstate_file();
-        match std::fs::File::open(&saved_state_file) {
+        let profile = match std::fs::File::open(&saved_state_file) {
             Ok(file) => {
                 match ron::de::from_reader(file) {
                     Ok(profile) => {
@@ -259,7 +300,14 @@ impl Profile {
                 );
                 Self::default()
             },
-        }
+        };
+
+        // Applied here rather than in the GUI so the very first `view()` already
+        // renders in the persisted language - no English flash before the user's
+        // choice takes effect.
+        rust_i18n::set_locale(profile.language.code());
+
+        profile
     }
 
     pub async fn save(self) -> Result<()> {

@@ -26,6 +26,7 @@ use iced::{
         text::LineHeight, tooltip, tooltip::Position,
     },
 };
+use rust_i18n::t;
 use std::{
     sync::Arc,
     time::{Duration, Instant},
@@ -380,9 +381,13 @@ impl GamePanelComponent {
                             self.auto_triggered_download = false;
                             commands.push(Command::perform(async {}, move |_| {
                                 // `version` already comes with a leading "v".
-                                DefaultViewMessage::ShowToast(format!(
-                                    "Game updated to {version}"
-                                ))
+                                DefaultViewMessage::ShowToast(
+                                    t!(
+                                        "game_panel.toast_game_updated",
+                                        version = version
+                                    )
+                                    .into_owned(),
+                                )
                             }));
                         }
                         (
@@ -508,7 +513,7 @@ impl GamePanelComponent {
     }
 
     pub fn view(&self, active_profile: &Profile) -> Element<'_, DefaultViewMessage> {
-        let mut version_string = "Pre-Alpha".to_owned();
+        let mut version_string = t!("game_panel.version_prealpha").into_owned();
         if let Some(version) = &active_profile.version {
             // `version` already comes formatted with a leading "v" (e.g. "v0.26.1"),
             // so no extra "v" goes here - see the "vv0.26.1" bug this fixes.
@@ -525,14 +530,16 @@ impl GamePanelComponent {
             .push(text(version_string).size(11).style(TextStyle::Muted));
         if let Some(available) = available_notice {
             version_row = version_row.push(
-                text(format!("{available} available"))
+                text(t!("game_panel.version_available", version = available))
                     .size(11)
                     .style(TextStyle::Accent),
             );
         }
 
         column![]
-            .push(heading_with_rule::<DefaultViewMessage>("Game Version"))
+            .push(heading_with_rule::<DefaultViewMessage, _>(t!(
+                "game_panel.heading"
+            )))
             .push(
                 container(
                     row![]
@@ -555,7 +562,7 @@ impl GamePanelComponent {
                                     ),
                                 )
                                 .center_y(),
-                                text("Settings").size(14),
+                                text(t!("game_panel.settings_tooltip")).size(14),
                                 Position::Left,
                             )
                             .style(ContainerStyle::Tooltip)
@@ -586,32 +593,43 @@ impl GamePanelComponent {
 }
 
 fn update_prompt_dialog(version: &str) -> Element<'static, GamePanelMessage> {
-    let title = format!("Version {version} is available");
-    let body = text(
-        "You can install it now, or keep playing on your current version and update \
-         later.",
-    )
-    .size(14)
-    .style(TextStyle::Secondary)
-    .into();
+    let title = t!("game_panel.update_prompt_title", version = version).into_owned();
+    let body = text(t!("game_panel.update_prompt_body"))
+        .size(14)
+        .style(TextStyle::Secondary)
+        .into();
 
     let actions = row![]
         .spacing(10)
         .push(
-            button(text("Not now").font(POPPINS_MEDIUM_FONT).size(14))
-                .style(ButtonStyle::Ghost)
-                .padding([10, 18])
-                .on_press(GamePanelMessage::DismissUpdatePrompt),
+            button(
+                text(t!("game_panel.update_prompt_not_now"))
+                    .font(POPPINS_MEDIUM_FONT)
+                    .size(14),
+            )
+            .style(ButtonStyle::Ghost)
+            .padding([10, 18])
+            .on_press(GamePanelMessage::DismissUpdatePrompt),
         )
         .push(
-            button(text("Update now").font(POPPINS_BOLD_FONT).size(14))
-                .style(ButtonStyle::Primary)
-                .padding([10, 22])
-                .on_press(GamePanelMessage::ConfirmUpdate),
+            button(
+                text(t!("game_panel.update_prompt_update_now"))
+                    .font(POPPINS_BOLD_FONT)
+                    .size(14),
+            )
+            .style(ButtonStyle::Primary)
+            .padding([10, 22])
+            .on_press(GamePanelMessage::ConfirmUpdate),
         )
         .into();
 
-    modal_shell(GOLD_500, "GAME UPDATE", title, body, Some(actions))
+    modal_shell(
+        GOLD_500,
+        t!("game_panel.update_prompt_eyebrow"),
+        title,
+        body,
+        Some(actions),
+    )
 }
 
 impl GamePanelComponent {
@@ -636,7 +654,7 @@ impl GamePanelComponent {
         match &self.state {
             GamePanelState::UpdateAvailable { version, .. } => {
                 let play_button = button(
-                    text("PLAY")
+                    text(t!("game_panel.play_button"))
                         .font(POPPINS_BOLD_FONT)
                         .size(24)
                         .horizontal_alignment(Horizontal::Center)
@@ -653,7 +671,11 @@ impl GamePanelComponent {
                         .align_items(Alignment::Center)
                         .width(Length::Fill)
                         .spacing(2)
-                        .push(text("Update").font(POPPINS_MEDIUM_FONT).size(15))
+                        .push(
+                            text(t!("game_panel.update_button"))
+                                .font(POPPINS_MEDIUM_FONT)
+                                .size(15),
+                        )
                         .push(text(version.clone()).size(11).style(TextStyle::Secondary)),
                 )
                 .style(ButtonStyle::Accent)
@@ -685,10 +707,18 @@ impl GamePanelComponent {
                                 unzip.is_finished(),
                                 delete.is_finished(),
                             ) {
-                                (false, _, _) => ("DOWNLOADING", &download),
-                                (true, false, _) => ("UNZIPPING", &unzip),
-                                (true, true, false) => ("DELETING", &delete),
-                                (true, true, true) => ("FINALIZING", &unzip),
+                                (false, _, _) => {
+                                    (t!("game_panel.step_downloading"), &download)
+                                },
+                                (true, false, _) => {
+                                    (t!("game_panel.step_unzipping"), &unzip)
+                                },
+                                (true, true, false) => {
+                                    (t!("game_panel.step_deleting"), &delete)
+                                },
+                                (true, true, true) => {
+                                    (t!("game_panel.step_finalizing"), &unzip)
+                                },
                             };
                             (
                                 step,
@@ -699,19 +729,31 @@ impl GamePanelComponent {
                                 progress.time_remaining(),
                             )
                         },
-                        Some(Progress::Successful(_)) => {
-                            ("FINALIZING", 100.0, 0, 0, 0, Duration::from_secs(0))
-                        },
-                        _ => ("PREPARING", 0.0, 0, 0, 0, Duration::from_secs(0)),
+                        Some(Progress::Successful(_)) => (
+                            t!("game_panel.step_finalizing"),
+                            100.0,
+                            0,
+                            0,
+                            0,
+                            Duration::from_secs(0),
+                        ),
+                        _ => (
+                            t!("game_panel.step_preparing"),
+                            0.0,
+                            0,
+                            0,
+                            0,
+                            Duration::from_secs(0),
+                        ),
                     };
 
                 let download_rate = bytes_per_sec as f32 / 1_000_000.0;
 
                 let mut meta_row = row![].spacing(6).align_items(Alignment::Center).push(
-                    text(format!(
-                        "{} / {}",
-                        pretty_bytes(downloaded),
-                        pretty_bytes(total)
+                    text(t!(
+                        "game_panel.progress_bytes",
+                        downloaded = pretty_bytes(downloaded),
+                        total = pretty_bytes(total)
                     ))
                     .size(12)
                     .style(TextStyle::Secondary),
@@ -721,9 +763,12 @@ impl GamePanelComponent {
                     meta_row = meta_row
                         .push(text("·").size(12).style(TextStyle::Muted))
                         .push(
-                            text(format!("{download_rate:.1} MB/s"))
-                                .font(POPPINS_MEDIUM_FONT)
-                                .size(12),
+                            text(t!(
+                                "game_panel.progress_speed",
+                                rate = format!("{download_rate:.1}")
+                            ))
+                            .font(POPPINS_MEDIUM_FONT)
+                            .size(12),
                         )
                         .push(iced::widget::horizontal_space());
 
@@ -731,9 +776,18 @@ impl GamePanelComponent {
                     let minutes = (remaining.as_secs() / 60) % 60;
                     let hours = (remaining.as_secs() / 60) / 60;
                     let remaining_text = if hours > 0 {
-                        format!("{hours:02}:{minutes:02}:{seconds:02} left")
+                        t!(
+                            "game_panel.time_remaining_with_hours",
+                            hours = format!("{hours:02}"),
+                            minutes = format!("{minutes:02}"),
+                            seconds = format!("{seconds:02}")
+                        )
                     } else {
-                        format!("{minutes:02}:{seconds:02} left")
+                        t!(
+                            "game_panel.time_remaining",
+                            minutes = format!("{minutes:02}"),
+                            seconds = format!("{seconds:02}")
+                        )
                     };
                     meta_row = meta_row
                         .push(text(remaining_text).size(12).style(TextStyle::Secondary));
@@ -767,7 +821,7 @@ impl GamePanelComponent {
                         .push(container(text("")).height(Length::Fixed(16.0)))
                         .push(
                             button(
-                                text("Cancel")
+                                text(t!("game_panel.cancel_button"))
                                     .font(POPPINS_MEDIUM_FONT)
                                     .size(14)
                                     .horizontal_alignment(Horizontal::Center)
@@ -790,24 +844,36 @@ impl GamePanelComponent {
                 // For all other states, the button is shown with different text/styling
                 // dependant on the state
                 let (button_text, enabled) = match &self.state {
-                    GamePanelState::ReadyToPlay => ("PLAY", true),
-                    GamePanelState::Offline(true) => ("PLAY OFFLINE", true),
-                    GamePanelState::Offline(false) => ("RETRY", true),
+                    GamePanelState::ReadyToPlay => (t!("game_panel.play_button"), true),
+                    GamePanelState::Offline(true) => {
+                        (t!("game_panel.play_offline_button"), true)
+                    },
+                    GamePanelState::Offline(false) => {
+                        (t!("game_panel.retry_button"), true)
+                    },
                     GamePanelState::Updating {
                         btnstate: dstate, ..
                     } => match *dstate {
-                        DownloadButtonState::Checking => ("CHECKING FOR UPDATES…", false),
-                        DownloadButtonState::WaitForConfirm => ("DOWNLOAD", true),
+                        DownloadButtonState::Checking => {
+                            (t!("game_panel.checking_button"), false)
+                        },
+                        DownloadButtonState::WaitForConfirm => {
+                            (t!("game_panel.download_button"), true)
+                        },
                         _ => unreachable!(),
                     },
-                    GamePanelState::Retry => ("RETRY", true),
-                    GamePanelState::Playing(_) => ("RUNNING", false),
+                    GamePanelState::Retry => (t!("game_panel.retry_button"), true),
+                    GamePanelState::Playing(_) => {
+                        (t!("game_panel.running_button"), false)
+                    },
                     // The "update now?" prompt covers this button while it's up, so
                     // it's just shown disabled underneath -
                     // GamePanelState::UpdateAvailable above is what
                     // actually renders once the user answers.
                     GamePanelState::UpdateAvailable { .. } => unreachable!(),
-                    GamePanelState::UpdatePrompt { .. } => ("PLAY", false),
+                    GamePanelState::UpdatePrompt { .. } => {
+                        (t!("game_panel.play_button"), false)
+                    },
                 };
 
                 let mut launch_button = button(
@@ -828,7 +894,7 @@ impl GamePanelComponent {
                             .width(Length::Fill)
                             .padding([10, 40])
                             .push(
-                                text("Connect to")
+                                text(t!("game_panel.connect_to_line1"))
                                     .font(POPPINS_BOLD_FONT)
                                     .line_height(LineHeight::Absolute(22.into()))
                                     .size(18)
@@ -836,7 +902,7 @@ impl GamePanelComponent {
                                     .vertical_alignment(Vertical::Center),
                             )
                             .push(
-                                text("selected server")
+                                text(t!("game_panel.connect_to_line2"))
                                     .font(POPPINS_BOLD_FONT)
                                     .line_height(LineHeight::Absolute(22.into()))
                                     .size(18)
@@ -863,14 +929,14 @@ impl GamePanelComponent {
                         .width(Length::Fill)
                         .padding([10, 0])
                         .push(
-                            text("Server")
+                            text(t!("game_panel.server_browser_line1"))
                                 .font(POPPINS_MEDIUM_FONT)
                                 .size(15)
                                 .horizontal_alignment(Horizontal::Center)
                                 .vertical_alignment(Vertical::Center),
                         )
                         .push(
-                            text("Browser")
+                            text(t!("game_panel.server_browser_line2"))
                                 .font(POPPINS_MEDIUM_FONT)
                                 .size(15)
                                 .horizontal_alignment(Horizontal::Center)

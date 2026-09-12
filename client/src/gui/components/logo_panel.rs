@@ -11,6 +11,7 @@ use iced::{
     alignment::Vertical,
     widget::{Image, button, column, container, image::Handle, row, text, text::Shaping},
 };
+use rust_i18n::t;
 
 #[derive(Clone, Default, Debug)]
 pub struct LogoPanelComponent {}
@@ -31,17 +32,17 @@ impl LogoPanelComponent {
                         .push(link_widget(
                             BOOK_ICON,
                             "https://book.xindeler.com/",
-                            "Game Manual",
+                            t!("logo_panel.game_manual_link"),
                         ))
                         .push(link_widget(
                             CHAT_ICON,
                             "https://discord.gg/hgdhHY6vw",
-                            "Community",
+                            t!("logo_panel.community_link"),
                         ))
                         .push(link_widget(
                             USER_ICON,
                             "https://xindeler.com/account/",
-                            "Create Account",
+                            t!("logo_panel.create_account_link"),
                         )),
                     // Donate link removed for now: Xindeler doesn't have its own
                     // donation page yet.
@@ -58,7 +59,7 @@ impl LogoPanelComponent {
 fn link_widget<'a>(
     image_bytes: &[u8],
     url: &'a str,
-    link_text: &'a str,
+    link_text: impl ToString,
 ) -> Element<'a, DefaultViewMessage> {
     container(
         button(
