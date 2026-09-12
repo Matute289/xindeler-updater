@@ -1,6 +1,7 @@
 _version: 1
 
-# Español (Latinoamérica). Tuteo neutro, tono casual de UI de juego - nada de "usted".
+# Español (Latinoamérica), voseo rioplatense ("podés", "revisá"). Tono casual de UI de
+# juego - nada de "usted".
 # Las claves están agrupadas por el módulo de la GUI donde vive cada string, así que
 # este archivo se lee en paralelo con client/src/gui/. Espeja a en.yml clave por clave.
 
@@ -14,9 +15,9 @@ settings:
   language_label: "IDIOMA"
   language_tooltip: "El idioma de la interfaz del launcher"
   graphics_device_label: "TARJETA GRÁFICA"
-  graphics_device_tooltip: "La tarjeta gráfica que va a usar el juego. \nDéjala en Auto a menos que tengas problemas"
+  graphics_device_tooltip: "La tarjeta gráfica que va a usar el juego. \nDejala en Auto a menos que tengas problemas"
   graphics_mode_label: "MODO GRÁFICO"
-  graphics_mode_tooltip: "El backend de renderizado que va a usar el juego.\nDéjalo en Auto a menos que tengas problemas"
+  graphics_mode_tooltip: "El backend de renderizado que va a usar el juego.\nDejalo en Auto a menos que tengas problemas"
   graphics_auto_only_note: "Limitado a Auto hasta que el juego esté instalado y se haya ejecutado una vez - solo entonces puede informar tu GPU real y los backends de renderizado compatibles."
   log_level_label: "NIVEL DE LOG"
   log_level_tooltip: "Cambia cuánta información escribe el juego en su archivo de log"
@@ -26,8 +27,8 @@ settings:
   channel_tooltip: "El canal de descarga que se usa para bajar el juego"
   assets_override_label: "ASSETS PERSONALIZADOS"
   assets_override_placeholder: "/ruta/a/la/carpeta/con/tus/assets"
-  assets_override_tooltip: "¡Carpeta donde puedes poner assets modificados para probar cosas o divertirte!"
-  assets_override_dialog_title: "Elige la carpeta donde están tus assets personalizados"
+  assets_override_tooltip: "¡Carpeta donde podés poner assets modificados para probar cosas o divertirte!"
+  assets_override_dialog_title: "Elegí la carpeta donde están tus assets personalizados"
   env_vars_label: "VARIABLES DE ENTORNO"
   env_vars_tooltip: "Variables de entorno que se aplican al ejecutar Voxygen"
   auto_update_game_label: "Actualizar el juego automáticamente"
@@ -66,7 +67,7 @@ game_panel:
   time_remaining: "faltan %{minutes}:%{seconds}"
   update_prompt_eyebrow: "ACTUALIZACIÓN DEL JUEGO"
   update_prompt_title: "Ya está disponible la versión %{version}"
-  update_prompt_body: "Puedes instalarla ahora, o seguir jugando con tu versión actual y actualizar más tarde."
+  update_prompt_body: "Podés instalarla ahora, o seguir jugando con tu versión actual y actualizar más tarde."
   update_prompt_not_now: "Ahora no"
   update_prompt_update_now: "Actualizar ahora"
   toast_game_updated: "Juego actualizado a %{version}"
@@ -79,7 +80,7 @@ logo_panel:
 
 # client/src/gui/components/announcement_panel.rs
 announcement_panel:
-  outdated: "¡XindelerUpdater está desactualizado, actualiza a la última versión!"
+  outdated: "¡XindelerUpdater está desactualizado, actualizá a la última versión!"
   news: "Novedades del %{date}: %{message}"
   outdated_with_news: "¡XindelerUpdater está desactualizado! Novedades: %{message}"
   download_button: "Descargar XindelerUpdater"
@@ -129,6 +130,6 @@ default_view:
   launcher_update_applying_body: "Descargando e instalando %{version}. El launcher se va a reiniciar solo."
   launcher_update_failed_eyebrow: "FALLÓ LA ACTUALIZACIÓN"
   launcher_update_failed_title: "No se pudo actualizar a %{version}"
-  launcher_update_failed_body: "Revisa tu conexión e inténtalo de nuevo."
+  launcher_update_failed_body: "Revisá tu conexión e intentalo de nuevo."
   launcher_update_retry: "Reintentar"
   toast_launcher_updated: "Launcher actualizado de v%{old_version} a v%{new_version}"
