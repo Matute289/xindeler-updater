@@ -139,6 +139,7 @@ winresource = "0.1.15"
 
 [dev-dependencies]
 tempfile = "3"
+serde_json = "1" # for net::server_list's deserialization regression tests
 # Enables the `server` feature on top of `xindeler-query-server` above (same git
 # source, unified by Cargo), only for tests - lets `net::ping`'s tests spin up a real
 # `QueryServer` to verify the `Identity` check end-to-end instead of trusting the
