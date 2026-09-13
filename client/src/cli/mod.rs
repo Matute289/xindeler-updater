@@ -56,17 +56,17 @@ pub fn process() -> Result<()> {
         .worker_threads(4)
         .build()?;
 
-    // let the user know incase xindeler-updater can be updated.
-    #[cfg(windows)]
-    if let Ok(Some(release)) = crate::windows::query() {
-        tracing::info!(
-            "New XindelerUpdater release found: {}. Run `xindeler-updater upgrade` to \
-             update.",
-            release.version
-        );
-    }
-
     rt.block_on(async {
+        // let the user know incase xindeler-updater can be updated.
+        #[cfg(windows)]
+        if let Some(release) = crate::launcher_update::check_for_update().await {
+            tracing::info!(
+                "New XindelerUpdater release found: {}. Run `xindeler-updater upgrade` \
+                 to update.",
+                release.version
+            );
+        }
+
         let mut profile = Profile::load();
 
         // handle arguments
@@ -104,9 +104,7 @@ async fn process_arguments(
         },
         Action::Config => config(profile).await?,
         #[cfg(windows)]
-        Action::Upgrade => {
-            tokio::task::block_in_place(upgrade)?;
-        },
+        Action::Upgrade => upgrade(profile).await?,
     }
     Ok(())
 }
@@ -308,11 +306,11 @@ async fn config(profile: &mut Profile) -> Result<()> {
 }
 
 #[cfg(windows)]
-fn upgrade() -> Result<()> {
-    match crate::windows::query()? {
+async fn upgrade(profile: &Profile) -> Result<()> {
+    match crate::launcher_update::check_for_update().await {
         Some(release) => {
             tracing::info!("Found new XindelerUpdater release: {}", release.version);
-            crate::windows::update(&release)?;
+            crate::launcher_update::apply(release, profile.clone()).await?;
         },
         None => tracing::info!("XindelerUpdater is up-to-date."),
     }
