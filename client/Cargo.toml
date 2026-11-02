@@ -110,16 +110,20 @@ country-parser = "0.1.1"
 # Launcher self-update (client/src/launcher_update.rs): archive-zip for macOS's .zip
 # release, archive-tar/compression-flate2 for Linux's .tar.gz release. Windows ships a
 # plain .exe installer (no archive), applied via windows.rs instead.
-# default-features off + "rustls" on: self_update's default pulls in reqwest's
-# native-tls (openssl-sys), which needs libssl-dev to build - our own reqwest is
-# already rustls-only (see reqwest below) specifically to avoid that system dependency
-# in CI, so this stays consistent with it.
-self_update = { version = "0.42", default-features = false, features = [
-    "archive-zip",
-    "archive-tar",
-    "compression-flate2",
+# default-features off: only Extract + self_replace are used (self_update's own networking is not), but 1.x
+# refuses to compile without an HTTP client feature, so reqwest + rustls stay (rustls-only, same as our reqwest;
+# no native-tls/openssl-sys). self_update 1.x renamed the features (compression-flate2 -> compression-tar-gz) and
+# moved to zip 9 / quick-xml 0.42, which fixes RUSTSEC-2026-0367/0368/0369/0429 and 0194/0195.
+self_update = { version = "1", default-features = false, features = [
+    "reqwest",
     "rustls",
+    "archive-zip",
+    "compression-zip-deflate",
+    "archive-tar",
+    "compression-tar-gz",
 ] }
+# self_update 1.x no longer re-exports self_replace; used directly for the in-place swap of the running exe.
+self-replace = "1"
 sha2 = "0.10"
 hex = "0.4"
 
