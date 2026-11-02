@@ -10,7 +10,7 @@
 //! Windows ships an NSIS installer (not a portable binary), so it's applied by
 //! downloading and running the installer elevated (see `windows::run_installer`).
 //! macOS and Linux ship a portable archived binary, so it's applied by extracting the
-//! archive and replacing the running executable in place (`self_update::self_replace`),
+//! archive and replacing the running executable in place (`self_replace`),
 //! then relaunching a fresh process.
 
 use crate::{Result, WEB_CLIENT, consts, error::ClientError};
@@ -191,7 +191,7 @@ mod unix {
             .join("extracted");
         let new_exe = extract_binary(archive_path, &extract_dir)?;
 
-        self_update::self_replace::self_replace(&new_exe).map_err(|e| {
+        self_replace::self_replace(&new_exe).map_err(|e| {
             ClientError::Custom(format!("Failed to replace launcher: {e}"))
         })?;
 
